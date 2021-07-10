@@ -1,0 +1,12 @@
+{application, eLog,
+   [
+      {description, "Erlang logger application"},
+      {vsn, "3.9.0"},
+      {modules, []},
+      {applications, [kernel, stdlib, goldrush]},
+      {registered, []},
+      {mod, {eLog_app, []}},
+      {env, []},
+      {licenses, ["MIT License"]}
+   ]}.
+
