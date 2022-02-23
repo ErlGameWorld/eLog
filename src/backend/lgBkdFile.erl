@@ -92,36 +92,35 @@ init(Opts) ->
       {ok, Fd, Inode, CTime, _Size} ->
          {ok, TemState#state{fd = Fd, inode = Inode, cTime = CTime}};
       {error, Reason} ->
-         ?INT_LOG(?error, <<"Failed to open log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]),
+         ?INT_LOG(?llvError, <<"Failed to open log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]),
          {ok, TemState#state{flap = true}}
    end.
 
-handleCall(mGetLogLevel, #state{level = Level} = State) ->
-   {reply, Level, State};
+handleCall(mGetLogLevel, #state{level = Level}) ->
+   {reply, Level};
 handleCall({mSetLogLevel, Level}, #state{fBName = FBName} = State) ->
    case lgUtil:validateLogLevel(Level) of
       false ->
-         {reply, {error, bad_loglevel}, State};
+         {reply, {error, bad_loglevel}};
       LevelMask ->
-         ?INT_LOG(?notice, <<"Changed loglevel of ~s to ~p">>, [FBName, Level]),
+         ?INT_LOG(?llvNotice, <<"Changed loglevel of ~s to ~p">>, [FBName, Level]),
          {reply, ok, State#state{level = LevelMask}}
    end;
-
 handleCall({mSetLogHwm, Hwm}, #state{shaper = Shaper, fBName = FBName} = State) ->
    case checkOpts([{hwm, Hwm}], true) of
       false ->
-         {reply, {error, badHwm}, State};
+         {reply, {error, badHwm}};
       _ ->
          NewShaper = Shaper#lgShaper{hwm = Hwm},
-         ?INT_LOG(?notice, <<"Changed loghwm of ~ts to ~p">>, [FBName, Hwm]),
+         ?INT_LOG(?llvNotice, <<"Changed loghwm of ~ts to ~p">>, [FBName, Hwm]),
          {reply, {lastHwm, Shaper#lgShaper.hwm}, State#state{shaper = NewShaper}}
    end;
 handleCall(mRotate, State = #state{fBName = FBName}) ->
-   {ok, NewState} = handleInfo({mRotate, FBName}, State),
+   {_, NewState} = handleInfo({mRotate, FBName}, State),
    {reply, ok, NewState};
-handleCall(_Msg, State) ->
+handleCall(_Msg, _State) ->
    ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
-   {reply, ok, State}.
+   {reply, ok}.
 
 handleEvent({mWriteLog, Message}, #state{fBName = FBName, level = Level, shaper = Shaper, fmtTer = FmtTer, fmtCfg = FmtCfg} = State) ->
    case lgUtil:isLoggAble(Message, Level, {lgBkdFile, FBName}) of
@@ -129,7 +128,7 @@ handleEvent({mWriteLog, Message}, #state{fBName = FBName, level = Level, shaper 
          #lgMsg{timestamp = Timestamp, severity = Severity} = Message,
          case lgUtil:checkHwm(Shaper) of
             {true, _Drop, NewShaper} ->
-               {ok, writeLog(State#state{shaper = NewShaper}, Timestamp, Severity, FmtTer:format(Message, FmtCfg))};
+               {noreply, writeLog(State#state{shaper = NewShaper}, Timestamp, Severity, FmtTer:format(Message, FmtCfg))};
             {drop, Drop, NewShaper} ->
                TemState =
                   case Drop =< 0 of
@@ -139,12 +138,12 @@ handleEvent({mWriteLog, Message}, #state{fBName = FBName, level = Level, shaper 
                         ReportStr = eFmt:format(<<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>, [Drop, NewShaper#lgShaper.hwm]),
                         NowMs = lgTime:nowMs(),
                         NowStr = lgUtil:msToBinStr(NowMs),
-                        ReportMsg = #lgMsg{severity = ?warning, pid = self(), node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = NowStr, timestamp = NowMs, message = ReportStr, destinations = []},
-                        writeLog(State, NowMs, ?warning, FmtTer:format(ReportMsg, FmtCfg))
+                        ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = NowStr, timestamp = NowMs, message = ReportStr, destinations = []},
+                        writeLog(State, NowMs, ?llvWarning, FmtTer:format(ReportMsg, FmtCfg))
                   end,
-               {ok, writeLog(TemState#state{shaper = NewShaper}, Timestamp, Severity, FmtTer:format(Message, FmtCfg))};
+               {noreply, writeLog(TemState#state{shaper = NewShaper}, Timestamp, Severity, FmtTer:format(Message, FmtCfg))};
             {false, _, NewShaper} ->
-               {ok, State#state{shaper = NewShaper}}
+               {noreply, State#state{shaper = NewShaper}}
          end;
       _ ->
          kpS
@@ -156,7 +155,9 @@ handleEvent(_Msg, _State) ->
 handleInfo({mRotate, FBName}, #state{fBName = FBName, date = Date} = State) ->
    NewState = closeFile(State),
    scheduleRotation(Date, FBName),
-   {ok, NewState};
+   {noreply, NewState};
+handleInfo({mRotate, _FBName}, State) ->
+   {noreply, State};
 handleInfo({mShaperExpired, FBName}, #state{shaper = Shaper, fBName = FBName, fmtTer = FmtTer, fmtCfg = FmtCfg} = State) ->
    case Shaper#lgShaper.dropped of
       0 ->
@@ -165,10 +166,10 @@ handleInfo({mShaperExpired, FBName}, #state{shaper = Shaper, fBName = FBName, fm
          ReportStr = eFmt:format(<<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>, [Dropped, Shaper#lgShaper.hwm]),
          NowMs = lgTime:nowMs(),
          NowStr = lgUtil:msToBinStr(NowMs),
-         ReportMsg = #lgMsg{severity = ?warning, pid = self(), node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = NowStr, timestamp = NowMs, message = ReportStr, destinations = []},
-         writeLog(State, NowMs, ?warning, FmtTer:format(ReportMsg, FmtCfg))
+         ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = NowStr, timestamp = NowMs, message = ReportStr, destinations = []},
+         writeLog(State, NowMs, ?llvWarning, FmtTer:format(ReportMsg, FmtCfg))
    end,
-   {ok, State#state{shaper = Shaper#lgShaper{dropped = 0}}};
+   {noreply, State#state{shaper = Shaper#lgShaper{dropped = 0}}};
 handleInfo(_Msg, _State) ->
    ?ERR(<<"~p info receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
    kpS.
@@ -198,7 +199,7 @@ writeLog(#state{fileName = FileName, fd = Fd, inode = Inode, cTime = CTime, flap
                      writeFile(NewState, Level, Msg)
                end;
             {error, Reason} ->
-               ?IIF(Flap, State, begin ?INT_LOG(?error, <<"Failed to reopen log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]), State#state{flap = true} end)
+               ?IIF(Flap, State, begin ?INT_LOG(?llvError, <<"Failed to reopen log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]), State#state{flap = true} end)
          end;
       _ ->
          writeFile(State, Level, Msg)
@@ -213,7 +214,7 @@ writeFile(#state{fd = Fd, fileName = FileName, flap = Flap, syncOn = SyncOn} = S
          NewFlap =
             case file:datasync(Fd) of
                {error, Reason} when Flap == false ->
-                  ?INT_LOG(?error, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
+                  ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
                   true;
                ok ->
                   false;

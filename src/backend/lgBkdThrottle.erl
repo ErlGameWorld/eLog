@@ -31,13 +31,13 @@ init([Sink, Hwm, Window]) ->
    lgConfig:ptSet({Sink, async}, true),
    {ok, #state{sink = Sink, hwm = Hwm, window = Hwm - Window}}.
 
-handleCall(mGetLogLevel, State) ->
-   {reply, ?none, State};
-handleCall({mSetLogLevel, _Level}, State) ->
-   {reply, ok, State};
-handleCall(_Msg, State) ->
+handleCall(mGetLogLevel, _State) ->
+   {reply, ?llvNone};
+handleCall({mSetLogLevel, _Level}, _State) ->
+   {reply, ok};
+handleCall(_Msg, _State) ->
    ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
-   {reply, ok, State}.
+   {reply, ok}.
 
 handleEvent({mWriteLog, _Message}, #state{sink = Sink, hwm = Hwm, window = Window, async = Async} = State) ->
    {_, MsgLen} = erlang:process_info(self(), message_queue_len),
@@ -45,11 +45,11 @@ handleEvent({mWriteLog, _Message}, #state{sink = Sink, hwm = Hwm, window = Windo
       MsgLen > Hwm andalso Async ->
          %% need to flip to sync mode
          lgConfig:ptSet({Sink, async}, false),
-         {ok, State#state{async = false}};
+         {noreply, State#state{async = false}};
       MsgLen < Window andalso not Async ->
          %% need to flip to async mode
          lgConfig:ptSet({Sink, async}, true),
-         {ok, State#state{async = true}};
+         {noreply, State#state{async = true}};
       true ->
          %% nothing needs to change
          kpS

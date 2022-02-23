@@ -81,6 +81,7 @@ startTrace({Handler, Filter, Level}) when is_atom(Level) ->
    {ok, _} = eLog:trace(Handler, Filter, Level).
 
 prep_stop(Handlers) ->
+   error_logger:delete_report_handler(lgErrLoggerH),
    [error_logger:add_report_handler(Handler) || Handler <- Handlers],
    case lgUtil:get_env(errLoggerRedirect, true) of
       true ->

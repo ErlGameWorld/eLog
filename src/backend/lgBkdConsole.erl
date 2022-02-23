@@ -12,7 +12,7 @@
 -compile(inline).
 -compile({inline_size, 128}).
 
--define(TERSE_FORMAT, [datetime, color, sev, message]).
+-define(TERSE_FORMAT, [datetime, color, sev, pid,module, <<":">>, function, <<"|">>, line, <<"|">>, message]).
 -define(LgDefConsoleFmtCfg, ?TERSE_FORMAT ++ [eol()]).
 -define(LgDefConsoleOpts, [{use_stderr, false}, {group_leader, false}, {id, ?MODULE}, {fmtTer, ?LgDefFmtTer}, {fmtCfg, ?LgDefConsoleFmtCfg}]).
 
@@ -45,7 +45,7 @@ init(Opts) ->
             _:_ -> error_logger:warning_msg(Msg ++ "~n")
          end,
          io:format("WARNING: " ++ Msg ++ "~n"),
-         ?INT_LOG(?warning, Msg, []),
+         ?INT_LOG(?llvWarning, Msg, []),
          {error, {fatal, old_shell}};
       _ ->
          true = checkOpts(Opts),
@@ -75,19 +75,21 @@ checkOpts([H | _]) ->
    {error, {invalid_opt, H}}.
 
 handleCall(mGetLogLevel, State) ->
-   {reply, State#state.level, State};
+   {reply, State#state.level};
 handleCall({mSetLogLevel, Level}, State) ->
    case lgUtil:validateLogLevel(Level) of
       false ->
-         {reply, {error, bad_loglevel}, State};
+         {reply, {error, bad_loglevel}};
       LevelMask ->
          {reply, ok, State#state{level = LevelMask}}
    end;
-handleCall({mRotate, _}, State) ->
-   {reply, ok, State};
-handleCall(_Msg, State) ->
+handleCall({mRotate, _}, _State) ->
+   {reply, ok};
+handleCall(mRotate, _State) ->
+   {reply, ok, _State};
+handleCall(_Msg, _State) ->
    ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
-   {reply, ok, State}.
+   {reply, ok}.
 
 handleEvent({mWriteLog, Message}, #state{level = Level, out = Out, fmtTer = FmtTer, fmtCfg = FmtCfg, colors = Colors, id = ID}) ->
    case lgUtil:isLoggAble(Message, Level, ID) of

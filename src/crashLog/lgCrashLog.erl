@@ -51,6 +51,7 @@ start_link(FBName, MaxFmtSize, MaxFileSize, Date, Count, Rotator) ->
    gen_srv:start_link({local, ?MODULE}, ?MODULE, {FBName, MaxFmtSize, MaxFileSize, Date, Count, Rotator}, []).
 
 init({FBName, MaxFmtSize, MaxFileSize, CfgDate, Count, Rotator}) ->
+   process_flag(trap_exit, true),
    {ok, Date} = lgUtil:parseRotateSpec(CfgDate),
    Filename = lgUtil:parsePath(FBName),
    case Rotator:openLogFile(Filename, false) of
@@ -58,7 +59,7 @@ init({FBName, MaxFmtSize, MaxFileSize, CfgDate, Count, Rotator}) ->
          scheduleRotation(Date),
          {ok, #state{fileName = Filename, fBName = FBName, fd = Fd, inode = Inode, cTime = CTime, maxFmtSize = MaxFmtSize, maxFileSize = MaxFileSize, date = Date, count = Count, rotator = Rotator}};
       {error, Reason} ->
-         ?INT_LOG(?error, <<"Failed to open crash log file ~ts with error: ~s">>, [Filename, file:format_error(Reason)]),
+         ?INT_LOG(?llvError, <<"Failed to open crash log file ~ts with error: ~s">>, [Filename, file:format_error(Reason)]),
          {ok, #state{fileName = Filename, fBName = FBName, maxFmtSize = MaxFmtSize, maxFileSize = MaxFileSize, date = Date, count = Count, flap = true, rotator = Rotator}}
    end.
 
@@ -79,7 +80,7 @@ handleInfo({mWriteLog, Event}, State) ->
 handleInfo(mRotate, #state{date = Date} = State) ->
    NewState = closeFile(State),
    scheduleRotation(Date),
-   {ok, NewState};
+   {noreply, NewState};
 handleInfo(_Msg, _State) ->
    ?ERR(<<"~p info receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
    kpS.
@@ -108,9 +109,9 @@ closeFile(#state{fBName = FBName, fd = Fd} = State) ->
          State#state{fileName = NewFileName, fd = undefined}
    end.
 
-otherNodeSuffix(Pid) when node(Pid) =/= node() ->
-   PidNode = node(Pid),
-   case PidNode =/= node() of
+otherNodeSuffix(Pid) ->
+   PidNode = ?IIF(is_pid(Pid), node(Pid), undefined),
+   case PidNode =/=  undefined andalso PidNode =/= node() of
       true ->
          <<"** at node ", (atom_to_binary(node(Pid), utf8))/binary, " **\n">>;
       _ ->
@@ -139,7 +140,7 @@ saslLimitedStr(supervisor_report, Report, FmtMaxBytes) ->
    Context = lgUtil:sup_get(errorContext, Report),
    Reason = lgUtil:sup_get(reason, Report),
    Offender = lgUtil:sup_get(offender, Report),
-   FmtString = <<"     Supervisor: ~p~n     Context:    ~p~n     Reason:     ~s~n     Offender:   ~s~n~n">>,
+   FmtString = <<"     Supervisor: ~p~n     Context:    ~p~n     Reason:     ~s~n     Offender:   ~s~n">>,
    ReasonStr = eFmt:formatBin(<<"~p">>, [Reason], [{charsLimit, FmtMaxBytes}]),
    OffenderStr = eFmt:formatBin(<<"~p">>, [Offender], [{charsLimit, FmtMaxBytes}]),
    eFmt:format(FmtString, [Name, Context, ReasonStr, OffenderStr]);
@@ -151,7 +152,7 @@ saslLimitedStr(progress, Report, FmtMaxBytes) ->
       end || {Tag, Data} <- Report
    ];
 saslLimitedStr(crash_report, Report, FmtMaxBytes) ->
-   eFmt:formatBin(<<"~p~n">>, [Report], [{charsLimit, FmtMaxBytes}]).
+   eFmt:formatBin(<<"~p">>, [Report], [{charsLimit, FmtMaxBytes}]).
 
 writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTime, flap = Flap, maxFmtSize = FmtMaxBytes, maxFileSize = RotSize, rotator = Rotator} = State) ->
    {ReportStr, Pid, MsgStr, _ErrorP} =
@@ -159,7 +160,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
          {error, _GL, {Pid1, Fmt, Args}} ->
             {<<"ERROR REPORT">>, Pid1, eFmt:formatBin(Fmt, Args, [{charsLimit, FmtMaxBytes}]), true};
          {error_report, _GL, {Pid1, std_error, Rep}} ->
-            {<<"ERROR REPORT">>, Pid1, eFmt:formatBin(<<"~p\n">>, [Rep], [{charsLimit, FmtMaxBytes}]), true};
+            {<<"ERROR REPORT">>, Pid1, eFmt:formatBin(<<"~p">>, [Rep], [{charsLimit, FmtMaxBytes}]), true};
          {error_report, _GL, Other} ->
             perhapsSaslReport(error_report, Other, FmtMaxBytes);
          _ ->
@@ -177,12 +178,12 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      handleCast({mWriteLog, Event}, NewState);
                   _ ->
                      TimeBinStr = lgUtil:msToBinStr(),
-                     Time = [TimeBinStr, <<" =">>, ReportStr, <<"====\n">>],
+                     Time = [TimeBinStr, <<" =">>, ReportStr, <<"====\n\t\t">>],
                      NodeSuffix = otherNodeSuffix(Pid),
-                     Msg = eFmt:formatBin(<<"~s~s~s">>, [Time, MsgStr, NodeSuffix]),
+                     Msg = eFmt:formatBin(<<"~s~s~s~n">>, [Time, MsgStr, NodeSuffix]),
                      case file:write(NewFD, unicode:characters_to_binary(Msg)) of
                         {error, Reason} when Flap == false ->
-                           ?INT_LOG(?error, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
+                           ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
                            {ok, State#state{fd = NewFD, inode = NewInode, cTime = NewCTime, flap = true}};
                         ok ->
                            {ok, State#state{fd = NewFD, inode = NewInode, cTime = NewCTime, flap = false}};
@@ -191,7 +192,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      end
                end;
             {error, Reason} ->
-               ?IIF(Flap, {ok, State}, begin ?INT_LOG(?error, <<"Failed to reopen crash log ~ts with error: ~s">>, [FileName, file:format_error(Reason)]), {ok, State#state{flap = true}} end)
+               ?IIF(Flap, {ok, State}, begin ?INT_LOG(?llvError, <<"Failed to reopen crash log ~ts with error: ~s">>, [FileName, file:format_error(Reason)]), {ok, State#state{flap = true}} end)
          end
    end.
 

@@ -196,35 +196,35 @@ runFun(Fun, Default) ->
          Default
    end.
 
-loSeverity(?debug) -> <<"debug">>;
-loSeverity(?info) -> <<"info">>;
-loSeverity(?notice) -> <<"notice">>;
-loSeverity(?warning) -> <<"warning">>;
-loSeverity(?error) -> <<"error">>;
-loSeverity(?critical) -> <<"critical">>;
-loSeverity(?alert) -> <<"alert">>;
-loSeverity(?emergency) -> <<"emergency">>;
-loSeverity(?none) -> <<"none">>.
+loSeverity(?llvDebug) -> <<"debug">>;
+loSeverity(?llvInfo) -> <<"info">>;
+loSeverity(?llvNotice) -> <<"notice">>;
+loSeverity(?llvWarning) -> <<"warning">>;
+loSeverity(?llvError) -> <<"error">>;
+loSeverity(?llvCritical) -> <<"critical">>;
+loSeverity(?llvAlert) -> <<"alert">>;
+loSeverity(?llvEmergency) -> <<"emergency">>;
+loSeverity(?llvNone) -> <<"none">>.
 
-upSeverity(?debug) -> <<"DEBUG">>;
-upSeverity(?info) -> <<"INFO">>;
-upSeverity(?notice) -> <<"NOTICE">>;
-upSeverity(?warning) -> <<"WARNING">>;
-upSeverity(?error) -> <<"ERROR">>;
-upSeverity(?critical) -> <<"CRITICAL">>;
-upSeverity(?alert) -> <<"ALERT">>;
-upSeverity(?emergency) -> <<"EMERGENCY">>;
-upSeverity(?none) -> <<"NONE">>.
+upSeverity(?llvDebug) -> <<"DEBUG">>;
+upSeverity(?llvInfo) -> <<"INFO">>;
+upSeverity(?llvNotice) -> <<"NOTICE">>;
+upSeverity(?llvWarning) -> <<"WARNING">>;
+upSeverity(?llvError) -> <<"ERROR">>;
+upSeverity(?llvCritical) -> <<"CRITICAL">>;
+upSeverity(?llvAlert) -> <<"ALERT">>;
+upSeverity(?llvEmergency) -> <<"EMERGENCY">>;
+upSeverity(?llvNone) -> <<"NONE">>.
 
-sevSeverity(?debug) -> <<"[D]">>;
-sevSeverity(?info) -> <<"[I]">>;
-sevSeverity(?notice) -> <<"[N]">>;
-sevSeverity(?warning) -> <<"[W]">>;
-sevSeverity(?error) -> <<"[E]">>;
-sevSeverity(?critical) -> <<"[C]">>;
-sevSeverity(?alert) -> <<"[A]">>;
-sevSeverity(?emergency) -> <<"[E]">>;
-sevSeverity(?none) -> <<"[o]">>.
+sevSeverity(?llvDebug) -> <<"[D]">>;
+sevSeverity(?llvInfo) -> <<"[I]">>;
+sevSeverity(?llvNotice) -> <<"[N]">>;
+sevSeverity(?llvWarning) -> <<"[W]">>;
+sevSeverity(?llvError) -> <<"[E]">>;
+sevSeverity(?llvCritical) -> <<"[C]">>;
+sevSeverity(?llvAlert) -> <<"[A]">>;
+sevSeverity(?llvEmergency) -> <<"[E]">>;
+sevSeverity(?llvNone) -> <<"[o]">>.
 
 mdJoin([], _FieldSep, BinAcc) ->
    BinAcc;

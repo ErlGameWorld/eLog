@@ -69,7 +69,7 @@
 }).
 
 start() ->
-   application:ensure_all_started(eLog) .
+   application:ensure_all_started(eLog).
 
 stop() ->
    application:stop(eLog).
@@ -215,10 +215,8 @@ rotateSink(Sink) ->
 rotateAll() ->
    rotateHandlers(lists:map(fun({H, _, S}) -> {H, S} end, lgConfig:ptGet(handlers, []))).
 
-
 rotateHandlers(Handlers) ->
    [rotateHandler(Handler, Sink) || {Handler, Sink} <- Handlers].
-
 
 rotateHandler(Handler) ->
    Handlers = lgConfig:ptGet(handlers, []),
@@ -246,7 +244,7 @@ parseStack(Stacktrace) ->
 >>.
 
 parseStack(Class, Reason, Stacktrace) ->
-   eFmt:formatBin(<<"~n  Class:~s~n  Reason:~p~n  Stacktrace:~s">>, [Class, Reason, parseStack(Stacktrace)]).
+   eFmt:formatBin(<<"~n  Class:~p~n  Reason:~p~n  Stacktrace:~s">>, [Class, Reason, parseStack(Stacktrace)]).
 
 trace(BkdMod, Filter) ->
    trace(BkdMod, Filter, debug).
@@ -495,15 +493,16 @@ add_trace_to_loglevel_config(Trace, Sink) ->
 %% arguments. The caller is NOT crashed.
 
 unsafeFormat(Fmt, Args) ->
-   try io_lib:format(Fmt, Args)
+   try eFmt:formatBin(Fmt, Args)
    catch
-      _:_ -> io_lib:format("FORMAT ERROR SAFE: ~p ~p", [Fmt, Args])
+      _:_ -> eFmt:formatBin(<<"FORMAT ERROR SAFE: ~p ~p">>, [Fmt, Args])
    end.
 
 safeFormat(Fmt, Args, Limit) ->
-   try eFmt:formatBin(Fmt, Args, [{charsLimit, Limit}])
+   try eFmt:formatBin(Fmt, Args, Limit)
    catch
-      _:_ -> eFmt:formatBin(<<"FORMAT ERROR UNSAFE: ~p ~p">>, [Fmt, Args], [{charsLimit, Limit}])
+      _:_ ->
+         eFmt:formatBin(<<"FORMAT ERROR UNSAFE: ~p ~p">>, [Fmt, Args], Limit)
    end.
 
 %% @private Print the format string `Fmt' with `Args' without a size limit.

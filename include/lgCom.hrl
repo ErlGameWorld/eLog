@@ -10,14 +10,14 @@
 -define(LgDefTruncation, 4096).
 
 %% 日志等级定义
--define(debug, 128).
--define(info, 64).
--define(notice, 32).
--define(warning, 16).
--define(error, 8).
--define(critical, 4).
--define(alert, 2).
--define(emergency, 1).
--define(none, 0).
+-define(llvDebug, 128).
+-define(llvInfo, 64).
+-define(llvNotice, 32).
+-define(llvWarning, 16).
+-define(llvError, 8).
+-define(llvCritical, 4).
+-define(llvAlert, 2).
+-define(llvEmergency, 1).
+-define(llvNone, 0).
 
 -endif.

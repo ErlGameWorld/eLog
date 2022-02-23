@@ -7,6 +7,6 @@
       {registered, []},
       {mod, {eLog_app, []}},
       {env, []},
-      {licenses, ["MIT License"]}
+      {licenses, ["MIT"]}
    ]}.
 

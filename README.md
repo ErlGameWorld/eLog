@@ -92,7 +92,7 @@ Examples:
 
 错误记录器集成
 ------------------------
-error_logger eLog还提供了一个处理程序模块，该模块将传统的erlang错误消息转换为更友好的格式，并将其发送到贮藏啤酒中，以像常规贮藏啤酒日志调用一样对待。
+error_logger eLog还提供了一个处理程序模块，该模块将传统的erlang错误消息转换为更友好的格式，并将其发送到eLog中，以像常规eLog日志调用一样对待。
 要禁用此功能，请将更大的应用程序变量设置errLoggerRedirect为false。您也可以通过设置变量OTP和牛仔消息禁用重新格式化 errLoggerFmtRaw 为 true。
 
 如果您将自己的处理程序安装到中error_logger，则可以通过使用errLoggerWhitelist环境变量和允许的处理程序列表来告诉eLog使其不被处理。
@@ -147,7 +147,7 @@ will send all `error_logger` messages to `error_logger.log` file.
 
 ### 事件队列刷新
 
-超过高水位标记时，可以将啤酒配置为刷新消息队列中的所有事件通知。这可能会对同一事件管理器（例如中的error_logger）中的其他处理程序产生意想不到的后果，因为它们所依赖的事件可能会被错误地丢弃。默认情况下，此行为已启用，但可以通过以下方式进行控制error_logger：
+超过高水位标记时，可以将eLog配置为刷新消息队列中的所有事件通知。这可能会对同一事件管理器（例如中的error_logger）中的其他处理程序产生意想不到的后果，因为它们所依赖的事件可能会被错误地丢弃。默认情况下，此行为已启用，但可以通过以下方式进行控制error_logger：
 
 ```erlang
 {errLoggerFlushQueue, true | false}
@@ -224,13 +224,13 @@ info - info and higher (>= is implicit)
 
 内部日志旋转
 ---------------------
-啤酒可以轮换自己的日志，也可以通过外部流程完成日志。要使用内旋，使用size，date并count在文件后端的配置值：
+eLog可以轮换自己的日志，也可以通过外部流程完成日志。要使用内旋，使用size，date并count在文件后端的配置值：
 
 ```erlang
 [{file, "error.log"}, {level, error}, {size, 10485760}, {date, "$D0"}, {count, 5}]
 ```
 
-这告诉啤酒将错误和以上消息记录到error.log文件，并在午夜或到达10mb时旋转文件（以先到者为准），并在当前文件之外保留5个旋转的日志。将count设置为0不会禁用旋转，而是旋转文件，并且不保留以前的版本。要禁用旋转，请将大小设置为0，将日期设置为“”。
+这告诉eLog将错误和以上消息记录到error.log文件，并在午夜或到达10mb时旋转文件（以先到者为准），并在当前文件之外保留5个旋转的日志。将count设置为0不会禁用旋转，而是旋转文件，并且不保留以前的版本。要禁用旋转，请将大小设置为0，将日期设置为“”。
 
 该$D0语法来自newsyslog.conf中newsyslog使用的语法。相关摘录如下：
 
@@ -299,7 +299,7 @@ order to reset the color after each log message.
 
 Tracing
 -------
-eLog支持基于日志消息属性重定向日志消息的基本支持。啤酒会自动在日志消息呼叫站点捕获pid，模块，功能和行。但是，您可以添加所需的任何其他属性：
+eLog支持基于日志消息属性重定向日志消息的基本支持。eLog会自动在日志消息呼叫站点捕获pid，模块，功能和行。但是，您可以添加所需的任何其他属性：
 
 ```erlang
 eLog:warning([{request, RequestID}, {vhost, Vhost}], "Permission denied to ~s", [User])
@@ -365,7 +365,7 @@ Using `=` is equivalent to the 2-tuple form.
 
 ### Filter composition
 
-作为啤酒3.3.1，你也可以使用的特殊滤光器构成键 all或any。例如，上面的过滤器示例可以表示为：
+作为eLog3.3.1，你也可以使用的特殊滤光器构成键 all或any。例如，上面的过滤器示例可以表示为：
 
 ```erlang
 eLog:trace_console([{all, [{request, '>', 117}, {request, '<', 120}]}])
@@ -428,7 +428,7 @@ on_emit：
 直到后端发出消息后，回调函数才能解析。 如果回调函数无法解析，未加载或产生未处理的错误，undefined则将返回该函数。 由于回调函数依赖于进程，因此有可能在依赖进程死亡导致undefined返回后发出消息。这个过程也可以是你自己的过程
 on_log：
 
-无论是否 发出消息，都将解析回调函数 如果无法解析或未加载回调函数，则啤酒本身不会处理错误。 回调中的任何潜在错误都应在回调函数本身中处理。
+无论是否 发出消息，都将解析回调函数 如果无法解析或未加载回调函数，则eLog本身不会处理错误。 回调中的任何潜在错误都应在回调函数本身中处理。
 由于该函数在日志记录时已解析，因此在解决该依赖进程之前，依赖进程死机的可能性应该较小，尤其是如果您正在从包含回调的应用程序进行日志记录时。 第三个元素是函数的回调，该函数由形式的元组组成{Module
 Function}。无论使用on_emit还是，回调都应如下所示on_log：
 
@@ -500,7 +500,7 @@ eLog默认将消息截断为4096字节，您可以使用该{eLog_truncation_size
 
 系统调试功能
 --------------------
-贮藏啤酒提供了一种使用sys“调试功能”的集成方式。您可以通过执行以下操作在目标进程中安装调试功能：
+eLog提供了一种使用sys“调试功能”的集成方式。您可以通过执行以下操作在目标进程中安装调试功能：
 
 ```erlang
 eLog:install_trace(Pid, notice).
@@ -547,4 +547,4 @@ case eLog:trace({eLog_console_backend, Node}, Filter, Level) of
 ```
 
 在上面的示例中，假定代码正在通过nodetool rpc 调用运行，以便代码在Erlang节点上执行，但是group_leader是reltool节点的代码（例如appname_maint_12345@127.0.0.1）。
-如果打算将此功能与跟踪配合使用，请确保start_handler的第二个参数与该id参数匹配。因此，当自定义group_leader进程退出时，贮藏啤酒将删除该处理程序的所有关联跟踪。
+如果打算将此功能与跟踪配合使用，请确保start_handler的第二个参数与该id参数匹配。因此，当自定义group_leader进程退出时，eLog将删除该处理程序的所有关联跟踪。

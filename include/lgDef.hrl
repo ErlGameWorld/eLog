@@ -71,8 +71,8 @@
 -define(LgDefHandler,
    [
       {lgBkdConsole, [{level, '>=info'}]},
-      {lgBkdFile, [{id, error}, {file, <<"error.log">>}, {level, '>=error'}, {size, 10485760}, {date, <<"$D0">>}, {count, 5}]},
-      {lgBkdFile, [{id, console}, {file, <<"console.log">>}, {level, '>=debug'}, {size, 10485760}, {date, <<"$D0">>}, {count, 5}]}
+      {lgBkdFile, [{id, error}, {file, <<"error.log">>}, {level, '>=error'}, {size, 10485760}, {date, <<"$D0">>}]},
+      {lgBkdFile, [{id, console}, {file, <<"console.log">>}, {level, '>=debug'}, {size, 10485760}, {date, <<"$D0">>}]}
    ]).
 
 -record(lgShaper, {

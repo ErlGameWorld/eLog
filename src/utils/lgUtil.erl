@@ -44,25 +44,25 @@
 levels() ->
    [debug, info, notice, warning, error, critical, alert, emergency, none].
 
-levelToNum(debug) -> ?debug;
-levelToNum(info) -> ?info;
-levelToNum(notice) -> ?notice;
-levelToNum(warning) -> ?warning;
-levelToNum(error) -> ?error;
-levelToNum(critical) -> ?critical;
-levelToNum(alert) -> ?alert;
-levelToNum(emergency) -> ?emergency;
-levelToNum(none) -> ?none.
+levelToNum(debug) -> ?llvDebug;
+levelToNum(info) -> ?llvInfo;
+levelToNum(notice) -> ?llvNotice;
+levelToNum(warning) -> ?llvWarning;
+levelToNum(error) -> ?llvError;
+levelToNum(critical) -> ?llvCritical;
+levelToNum(alert) -> ?llvAlert;
+levelToNum(emergency) -> ?llvEmergency;
+levelToNum(none) -> ?llvNone.
 
-numToLevel(?debug) -> debug;
-numToLevel(?info) -> info;
-numToLevel(?notice) -> notice;
-numToLevel(?warning) -> warning;
-numToLevel(?error) -> error;
-numToLevel(?critical) -> critical;
-numToLevel(?alert) -> alert;
-numToLevel(?emergency) -> emergency;
-numToLevel(?none) -> none.
+numToLevel(?llvDebug) -> debug;
+numToLevel(?llvInfo) -> info;
+numToLevel(?llvNotice) -> notice;
+numToLevel(?llvWarning) -> warning;
+numToLevel(?llvError) -> error;
+numToLevel(?llvCritical) -> critical;
+numToLevel(?llvAlert) -> alert;
+numToLevel(?llvEmergency) -> emergency;
+numToLevel(?llvNone) -> none.
 
 levelToChr(debug) -> $D;
 levelToChr(info) -> $I;
