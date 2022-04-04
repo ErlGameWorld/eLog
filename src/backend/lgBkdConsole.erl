@@ -12,8 +12,7 @@
 -compile(inline).
 -compile({inline_size, 128}).
 
--define(TERSE_FORMAT, [datetime, color, sev, pid,module, <<":">>, function, <<"|">>, line, <<"|">>, message]).
--define(LgDefConsoleFmtCfg, ?TERSE_FORMAT ++ [eol()]).
+-define(LgDefConsoleFmtCfg, [datetime, color, sev, pid,module, <<":">>, function, <<"|">>, line, <<"|">>, message, eol()]).
 -define(LgDefConsoleOpts, [{use_stderr, false}, {group_leader, false}, {id, ?MODULE}, {fmtTer, ?LgDefFmtTer}, {fmtCfg, ?LgDefConsoleFmtCfg}]).
 
 -export([
@@ -122,7 +121,7 @@ code_change(_OldVsn, State, _Extra) ->
    {ok, State}.
 
 eol() ->
-   ?IIF(lgUtil:get_env(colored, true), <<"\e[0m\r\n">>, <<"\r\n">>).
+   ?IIF(lgUtil:get_env(colored, true) andalso element(1, os:type()) =/= win32, <<"\e[0m\r\n">>, <<"\r\n">>).
 
 isNewStyleConsole() ->
    %% Criteria:

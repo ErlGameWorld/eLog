@@ -146,7 +146,7 @@ setLogLevel(Sink, Handler, Ident, Level) when is_atom(Level) ->
          undefined -> Handler;
          _ -> {Handler, Ident}
       end,
-   Reply = gen_emm:call(Sink, HandlerArg, {mSetLogLevel, Level}, infinity),
+   Reply = gen_emm:call(Sink, HandlerArg, {mSetLogLevel, Level}),
    upLogLevelCfg(Sink),
    Reply.
 
@@ -158,7 +158,7 @@ getLogLevel(Handler) ->
 %% @doc Get the loglevel for a particular sink's backend. In the case that the backend
 %% has multiple identifiers, the lowest is returned.
 getLogLevel(Sink, Handler) ->
-   case gen_emm:call(Sink, Handler, mGetLogLevel, infinity) of
+   case gen_emm:call(Sink, Handler, mGetLogLevel) of
       Mask when is_integer(Mask) ->
          case lgUtil:maskToLevels(Mask) of
             [] -> none;
@@ -168,7 +168,7 @@ getLogLevel(Sink, Handler) ->
    end.
 
 getLogLevels(Sink) ->
-   [gen_emm:call(Sink, Handler, mGetLogLevel, infinity) || Handler <- gen_emm:which_epm(Sink)].
+   [gen_emm:call(Sink, Handler, mGetLogLevel) || Handler <- gen_emm:which_epm(Sink)].
 
 %% @doc Set the loghwm for the default sink.
 setLogHwm(Handler, Hwm) when is_integer(Hwm) ->
@@ -176,11 +176,11 @@ setLogHwm(Handler, Hwm) when is_integer(Hwm) ->
 
 %% @doc Set the loghwm for a particular backend.
 setLogHwm(Sink, Handler, Hwm) when is_integer(Hwm) ->
-   gen_emm:call(Sink, Handler, {mSetLogHwm, Hwm}, infinity).
+   gen_emm:call(Sink, Handler, {mSetLogHwm, Hwm}).
 
 %% @doc Set the loghwm (log high water mark) for file backends with multiple identifiers
 setLogHwm(Sink, Handler, Ident, Hwm) when is_integer(Hwm) ->
-   gen_emm:call(Sink, {Handler, Ident}, {mSetLogHwm, Hwm}, infinity).
+   gen_emm:call(Sink, {Handler, Ident}, {mSetLogHwm, Hwm}).
 
 %% @doc recalculate min log level
 upLogLevelCfg(error_logger) ->

@@ -84,7 +84,7 @@
 -endif.
 
 setHighWater(N) ->
-   gen_event:call(error_logger, ?MODULE, {mSetHighWater, N}, infinity).
+   gen_event:call(error_logger, ?MODULE, {mSetHighWater, N}).
 
 -spec init(any()) -> {ok, #state{}}.
 init([HighWaterMark, GlStrategy]) ->
