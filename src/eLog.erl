@@ -19,6 +19,7 @@
    , unsafeFormat/2
    , getMd/0
    , setMd/1
+   , getMdPd/0
    , getLogLevel/1
    , getLogLevel/2
    , setLogLevel/2
@@ -76,18 +77,13 @@ stop() ->
 
 -spec dispatchLog(atom(), lgAtomLevel(), pid(), node(), atom(), atom(), integer(), list(), string(), list() | none, pos_integer(), safe | unsafe) -> ok.
 dispatchLog(Sink, Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Safety) ->
-   case ?eLogCfg:get(Sink) band Severity =/= 0 of
-      true ->
-         doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety);
-      _ ->
-         ok
-   end.
+   ?eLogCfg:get(Sink) band Severity == Severity andalso doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety).
 
 doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety) ->
    TraceFilters = lgConfig:ptGet({Sink, trace}, []),
-   Destinations = ?IIF(TraceFilters =/= [], lgUtil:check_traces(Metadata, Severity, TraceFilters, []), []),
+   Destinations = ?lgCASE(TraceFilters =/= [], lgUtil:check_traces(Metadata, Severity, TraceFilters, []), []),
 
-   MsgStr = ?IIF(Args =/= [] andalso Args =/= undefined, ?IIF(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format),
+   MsgStr = ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format),
    NowMs = lgTime:nowMs(),
    NowStr = lgUtil:msToBinStr(NowMs),
    LgMsg = #lgMsg{severity = Severity, pid = Pid, node = Node, module = Module, function = Function, line = Line, metadata = Metadata, datetime = NowStr, timestamp = NowMs, message = MsgStr, destinations = Destinations},
@@ -98,12 +94,15 @@ doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, S
       _ ->
          gen_emm:call_notify(Sink, {mWriteLog, LgMsg})
    end,
-   case whereis(?LgTrackSink) of
-      undefined ->
-         ok;
-      TraceSinkPid ->
-         gen_emm:info_notify(TraceSinkPid, {mWriteLog, LgMsg})
-   end.
+   
+   %% 这个功能还没用上
+   % case whereis(?LgTrackSink) of
+   %    undefined ->
+   %       ok;
+   %    TraceSinkPid ->
+   %       gen_emm:info_notify(TraceSinkPid, {mWriteLog, LgMsg})
+   % end.
+   ok.
 
 %% @doc Get metadata for current process
 -spec getMd() -> [{atom(), any()}].
@@ -112,6 +111,11 @@ getMd() ->
       undefined -> [];
       MD -> MD
    end.
+
+%% @doc Get metadata for current process
+-spec getMdPd() -> term().
+getMdPd() ->
+   erlang:get(?PdMdKey).
 
 %% @doc Set metadata for current process.
 %% Will badarg if you don't supply a list of {key, value} tuples keyed by atoms.
@@ -234,17 +238,17 @@ parseStack(Stacktrace) ->
       begin
          case Location of
             [] ->
-               <<"     ", (atom_to_binary(Mod, utf8))/binary, ":", (atom_to_binary(Func, utf8))/binary, "(", (eFmt:formatBin(<<"~w">>, [Arity]))/binary, ")\n">>;
+               <<"     ", (atom_to_binary(Mod, utf8))/binary, ":", (atom_to_binary(Func, utf8))/binary, "(", (eFmt:format(<<"~w">>, [Arity]))/binary, ")\n">>;
             [{file, File}, {line, Line}] ->
                <<"     ", (atom_to_binary(Mod, utf8))/binary, ":", (atom_to_binary(Func, utf8))/binary, "/", (integer_to_binary(Arity))/binary, "(", (unicode:characters_to_binary(File))/binary, ":", (integer_to_binary(Line))/binary, ")\n">>;
             _ ->
-               <<"     ", (atom_to_binary(Mod, utf8))/binary, ":", (atom_to_binary(Func, utf8))/binary, "(", (eFmt:formatBin(<<"~w">>, [Arity]))/binary, ")", (eFmt:formatBin(<<"~w">>, [Location]))/binary, "\n">>
+               <<"     ", (atom_to_binary(Mod, utf8))/binary, ":", (atom_to_binary(Func, utf8))/binary, "(", (eFmt:format(<<"~w">>, [Arity]))/binary, ")", (eFmt:format(<<"~w">>, [Location]))/binary, "\n">>
          end
       end || {Mod, Func, Arity, Location} <- Stacktrace
 >>.
 
 parseStack(Class, Reason, Stacktrace) ->
-   eFmt:formatBin(<<"~n  Class:~p~n  Reason:~p~n  Stacktrace:~s">>, [Class, Reason, parseStack(Stacktrace)]).
+   eFmt:format(<<"~n  Class:~p~n  Reason:~p~n  Stacktrace:~s">>, [Class, Reason, parseStack(Stacktrace)]).
 
 trace(BkdMod, Filter) ->
    trace(BkdMod, Filter, debug).
@@ -493,16 +497,16 @@ add_trace_to_loglevel_config(Trace, Sink) ->
 %% arguments. The caller is NOT crashed.
 
 unsafeFormat(Fmt, Args) ->
-   try eFmt:formatBin(Fmt, Args)
+   try eFmt:format(Fmt, Args)
    catch
-      _:_ -> eFmt:formatBin(<<"FORMAT ERROR SAFE: ~p ~p">>, [Fmt, Args])
+      _:_ -> eFmt:format(<<"FORMAT ERROR SAFE: ~p ~p">>, [Fmt, Args])
    end.
 
 safeFormat(Fmt, Args, Limit) ->
-   try eFmt:formatBin(Fmt, Args, Limit)
+   try eFmt:format(Fmt, Args, Limit)
    catch
       _:_ ->
-         eFmt:formatBin(<<"FORMAT ERROR UNSAFE: ~p ~p">>, [Fmt, Args], Limit)
+         eFmt:format(<<"FORMAT ERROR UNSAFE: ~p ~p">>, [Fmt, Args], Limit)
    end.
 
 %% @private Print the format string `Fmt' with `Args' without a size limit.

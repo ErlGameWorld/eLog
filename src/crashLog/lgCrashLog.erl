@@ -110,7 +110,7 @@ closeFile(#state{fBName = FBName, fd = Fd} = State) ->
    end.
 
 otherNodeSuffix(Pid) ->
-   PidNode = ?IIF(is_pid(Pid), node(Pid), undefined),
+   PidNode = ?lgCASE(is_pid(Pid), node(Pid), undefined),
    case PidNode =/=  undefined andalso PidNode =/= node() of
       true ->
          <<"** at node ", (atom_to_binary(node(Pid), utf8))/binary, " **\n">>;
@@ -141,26 +141,26 @@ saslLimitedStr(supervisor_report, Report, FmtMaxBytes) ->
    Reason = lgUtil:sup_get(reason, Report),
    Offender = lgUtil:sup_get(offender, Report),
    FmtString = <<"     Supervisor: ~p~n     Context:    ~p~n     Reason:     ~s~n     Offender:   ~s~n">>,
-   ReasonStr = eFmt:formatBin(<<"~p">>, [Reason], [{charsLimit, FmtMaxBytes}]),
-   OffenderStr = eFmt:formatBin(<<"~p">>, [Offender], [{charsLimit, FmtMaxBytes}]),
+   ReasonStr = eFmt:format(<<"~p">>, [Reason], [{charsLimit, FmtMaxBytes}]),
+   OffenderStr = eFmt:format(<<"~p">>, [Offender], [{charsLimit, FmtMaxBytes}]),
    eFmt:format(FmtString, [Name, Context, ReasonStr, OffenderStr]);
 saslLimitedStr(progress, Report, FmtMaxBytes) ->
    [
       begin
-         BinStr = eFmt:formatBin(<<"~p">>, [Data], [{charsLimit, FmtMaxBytes}]),
-         eFmt:formatBin(<<"    ~16w: ~s~n">>, [Tag, BinStr])
+         BinStr = eFmt:format(<<"~p">>, [Data], [{charsLimit, FmtMaxBytes}]),
+         eFmt:format(<<"    ~16w: ~s~n">>, [Tag, BinStr])
       end || {Tag, Data} <- Report
    ];
 saslLimitedStr(crash_report, Report, FmtMaxBytes) ->
-   eFmt:formatBin(<<"~p">>, [Report], [{charsLimit, FmtMaxBytes}]).
+   eFmt:format(<<"~p">>, [Report], [{charsLimit, FmtMaxBytes}]).
 
 writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTime, flap = Flap, maxFmtSize = FmtMaxBytes, maxFileSize = RotSize, rotator = Rotator} = State) ->
    {ReportStr, Pid, MsgStr, _ErrorP} =
       case Event of
          {error, _GL, {Pid1, Fmt, Args}} ->
-            {<<"ERROR REPORT">>, Pid1, eFmt:formatBin(Fmt, Args, [{charsLimit, FmtMaxBytes}]), true};
+            {<<"ERROR REPORT">>, Pid1, eFmt:format(Fmt, Args, [{charsLimit, FmtMaxBytes}]), true};
          {error_report, _GL, {Pid1, std_error, Rep}} ->
-            {<<"ERROR REPORT">>, Pid1, eFmt:formatBin(<<"~p">>, [Rep], [{charsLimit, FmtMaxBytes}]), true};
+            {<<"ERROR REPORT">>, Pid1, eFmt:format(<<"~p">>, [Rep], [{charsLimit, FmtMaxBytes}]), true};
          {error_report, _GL, Other} ->
             perhapsSaslReport(error_report, Other, FmtMaxBytes);
          _ ->
@@ -180,7 +180,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      TimeBinStr = lgUtil:msToBinStr(),
                      Time = [TimeBinStr, <<" =">>, ReportStr, <<"====\n\t\t">>],
                      NodeSuffix = otherNodeSuffix(Pid),
-                     Msg = eFmt:formatBin(<<"~s~s~s~n">>, [Time, MsgStr, NodeSuffix]),
+                     Msg = eFmt:format(<<"~s~s~s~n">>, [Time, MsgStr, NodeSuffix]),
                      case file:write(NewFD, unicode:characters_to_binary(Msg)) of
                         {error, Reason} when Flap == false ->
                            ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
@@ -192,7 +192,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      end
                end;
             {error, Reason} ->
-               ?IIF(Flap, {ok, State}, begin ?INT_LOG(?llvError, <<"Failed to reopen crash log ~ts with error: ~s">>, [FileName, file:format_error(Reason)]), {ok, State#state{flap = true}} end)
+               ?lgCASE(Flap, {ok, State}, begin ?INT_LOG(?llvError, <<"Failed to reopen crash log ~ts with error: ~s">>, [FileName, file:format_error(Reason)]), {ok, State#state{flap = true}} end)
          end
    end.
 

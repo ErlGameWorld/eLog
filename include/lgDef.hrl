@@ -2,9 +2,6 @@
 %% 应用名字
 -define(LgAppName, eLog).
 
-%% 三元表达式
--define(IIF(Cond, Then, That), (case Cond of true -> Then; _ -> That end)).
-
 %% 错误日志宏定义
 -define(ERR(Format), error_logger:error_msg(Format)).
 -define(ERR(Format, Args), error_logger:error_msg(Format, Args)).
@@ -67,12 +64,14 @@
 -define(LgDefFormatterCfg, []).
 -define(LgDefLogRoot, <<"./log">>).
 
+
+
 %% 默认日志文件选项
 -define(LgDefHandler,
    [
-      {lgBkdConsole, [{level, '>=info'}]},
-      {lgBkdFile, [{id, error}, {file, <<"error.log">>}, {level, '>=error'}, {size, 10485760}, {date, <<"$D0">>}]},
-      {lgBkdFile, [{id, console}, {file, <<"console.log">>}, {level, '>=debug'}, {size, 10485760}, {date, <<"$D0">>}]}
+	  % {lgBkdConsole, [{level, '>=info'}]},	
+      {lgBkdFile, [{id, info}, {file, <<"info.log">>}, {level, '>=info'}, {size, 10485760}, {date, <<"$D0">>}]},
+      {lgBkdFile, [{id, error}, {file, <<"error.log">>}, {level, '>=error'}, {size, 10485760}, {date, <<"$D0">>}]}
    ]).
 
 -record(lgShaper, {
@@ -125,7 +124,7 @@
 -define(LgShouldLog(Level), ?eLogCfg:get(?LgDefSink) band Level =/= 0).
 
 -define(LgNotify(Level, Pid, Format, Args),
-   gen_emm:info_notify(?LgDefSink, {mWriteLog, #lgMsg{severity = Level, pid = Pid, node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = lgUtil:msToBinStr(), timestamp = lgTime:nowMs(), message = eFmt:formatBin(Format, Args), destinations = []}})).
+   gen_emm:info_notify(?LgDefSink, {mWriteLog, #lgMsg{severity = Level, pid = Pid, node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = lgUtil:msToBinStr(), timestamp = lgTime:nowMs(), message = eFmt:format(Format, Args), destinations = []}})).
 
 %%仅供内部使用仅内部非阻塞日志记录调用，当我们仍在启动大型啤酒时尝试进行日志记录（通常为错误）时，会有一些特殊处理。
 -define(INT_LOG(Level, Format, Args),

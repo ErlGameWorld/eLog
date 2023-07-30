@@ -145,11 +145,11 @@ outColor(Colors, LgMsg) ->
 makeStr(A) when is_atom(A) -> atom_to_binary(A);
 makeStr(P) when is_pid(P) -> list_to_binary(pid_to_list(P));
 makeStr(B) when is_binary(B) -> B;
-makeStr(Other) -> eFmt:formatBin(<<"~p">>, [Other]).
+makeStr(Other) -> eFmt:format(<<"~p">>, [Other]).
 
 makeList(A) when is_atom(A) -> atom_to_list(A);
 makeList(P) when is_pid(P) -> pid_to_list(P);
-makeList(Other) -> binary_to_list(eFmt:formatBin(<<"~p">>, [Other])).
+makeList(Other) -> binary_to_list(eFmt:format(<<"~p">>, [Other])).
 
 makeStr(A, W) when is_integer(W) -> makeStr(left, makeList(A), W);
 makeStr(A, {Align, W}) when is_integer(W) ->
@@ -229,16 +229,16 @@ sevSeverity(?llvNone) -> <<"[o]">>.
 mdJoin([], _FieldSep, BinAcc) ->
    BinAcc;
 mdJoin([{_K, V}], _FieldSep, BinAcc) ->
-   <<BinAcc/binary, (eFmt:formatBin(<<"~p">>, [V]))/binary>>;
+   <<BinAcc/binary, (eFmt:format(<<"~p">>, [V]))/binary>>;
 mdJoin([{_K, V} | Left], FieldSep, BinAcc) ->
-   mdJoin(Left, FieldSep, <<BinAcc/binary, (eFmt:formatBin(<<"~p">>, [V]))/binary, FieldSep/binary>>).
+   mdJoin(Left, FieldSep, <<BinAcc/binary, (eFmt:format(<<"~p">>, [V]))/binary, FieldSep/binary>>).
 
 mdJoin([], _IntSep, _FieldSep, BinAcc) ->
    BinAcc;
 mdJoin([{K, V}], IntSep, _FieldSep, BinAcc) ->
-   <<BinAcc/binary, (eFmt:formatBin(<<"~p~s~p">>, [K, IntSep, V]))/binary>>;
+   <<BinAcc/binary, (eFmt:format(<<"~p~s~p">>, [K, IntSep, V]))/binary>>;
 mdJoin([{K, V} | Left], IntSep, FieldSep, BinAcc) ->
-   mdJoin(Left, FieldSep, <<BinAcc/binary, (eFmt:formatBin(<<"~p~s~p">>, [K, IntSep, V]))/binary, FieldSep/binary>>).
+   mdJoin(Left, FieldSep, <<BinAcc/binary, (eFmt:format(<<"~p~s~p">>, [K, IntSep, V]))/binary, FieldSep/binary>>).
 
 
 

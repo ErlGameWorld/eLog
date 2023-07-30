@@ -1,6 +1,13 @@
 -ifndef(__lgCom__).
 -define(__lgCom__, 1).
 
+%% 三目元算符
+-define(lgCASE(Cond, Then, That), case Cond of true -> Then; _ -> That end).
+-define(lgCASE(Expr, Expect, Then, ExprRet, That), case Expr of Expect -> Then; ExprRet -> That end).
+
+%% IF-DO表达式
+-define(lgIF(IFTure, DoThat), (IFTure) andalso (DoThat)).
+
 %% 配置模块
 -define(eLogCfg, eLogCfg).
 -define(eLogEts, eLogEts).

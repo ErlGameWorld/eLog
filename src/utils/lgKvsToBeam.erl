@@ -13,7 +13,7 @@ load(Module, KVs) ->
    Forms = forms(Module, KVs),
    {ok, Module, Bin} = compile:forms(Forms),
    code:soft_purge(Module),
-   {module, Module} = code:load_binary(Module, atom_to_list(Module), Bin),
+   {module, Module} = code:load_binary(Module, [], Bin),
    ok.
 
 forms(Module, KVs) ->

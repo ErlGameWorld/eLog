@@ -48,12 +48,12 @@ init(Opts) ->
          {error, {fatal, old_shell}};
       _ ->
          true = checkOpts(Opts),
-         CfgColors = ?IIF(lgUtil:get_env(colored, true), lgUtil:get_env(colors, []), []),
+         CfgColors = ?lgCASE(lgUtil:get_env(colored, true), lgUtil:get_env(colors, []), []),
          Colors = [{lgUtil:levelToNum(Level), ColorStr} || {Level, ColorStr} <- CfgColors],
          Level = lgUtil:get_opt(level, Opts, undefined),
          LevelMask = lgUtil:configToMask(Level),
          [UseErr, GroupLeader, Id, FmtTer, FmtCfg] = [lgUtil:get_opt(Key, Opts, Def) || {Key, Def} <- ?LgDefConsoleOpts],
-         Out = ?IIF(UseErr, standard_error, ?IIF(GroupLeader == false, user, begin erlang:monitor(process, GroupLeader), GroupLeader end)),
+         Out = ?lgCASE(UseErr, standard_error, ?lgCASE(GroupLeader == false, user, begin erlang:monitor(process, GroupLeader), GroupLeader end)),
          {ok, #state{level = LevelMask, id = Id, out = Out, fmtTer = FmtTer, fmtCfg = FmtCfg, colors = Colors}}
    end.
 
@@ -61,7 +61,7 @@ checkOpts([]) -> true;
 checkOpts([{id, {?MODULE, _}} | T]) ->
    checkOpts(T);
 checkOpts([{level, Level} | T]) ->
-   ?IIF(lgUtil:validateLogLevel(Level) =/= false, checkOpts(T), {error, {bad_level, Level}});
+   ?lgCASE(lgUtil:validateLogLevel(Level) =/= false, checkOpts(T), {error, {bad_level, Level}});
 checkOpts([{use_stderr, Flag} | T]) when is_boolean(Flag) ->
    checkOpts(T);
 checkOpts([{fmtTer, M} | T]) when is_atom(M) ->
@@ -90,8 +90,9 @@ handleCall(_Msg, _State) ->
    ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
    {reply, ok}.
 
-handleEvent({mWriteLog, Message}, #state{level = Level, out = Out, fmtTer = FmtTer, fmtCfg = FmtCfg, colors = Colors, id = ID}) ->
-   case lgUtil:isLoggAble(Message, Level, ID) of
+handleEvent({mWriteLog, Message}, #state{level = Level, out = Out, fmtTer = FmtTer, fmtCfg = FmtCfg, colors = Colors, id = _ID}) ->
+   %case lgUtil:isLoggAble(Message, Level, ID) of
+   case Level band Message#lgMsg.severity /= 0 of
       true ->
          io:put_chars(Out, FmtTer:format(Message, FmtCfg, Colors)),
          kpS;
@@ -121,7 +122,7 @@ code_change(_OldVsn, State, _Extra) ->
    {ok, State}.
 
 eol() ->
-   ?IIF(lgUtil:get_env(colored, true) andalso element(1, os:type()) =/= win32, <<"\e[0m\r\n">>, <<"\r\n">>).
+   ?lgCASE(lgUtil:get_env(colored, true) andalso element(1, os:type()) =/= win32, <<"\e[0m\r\n">>, <<"\r\n">>).
 
 isNewStyleConsole() ->
    %% Criteria:

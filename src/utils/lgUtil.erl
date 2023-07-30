@@ -220,7 +220,7 @@ parseRotateHourSpec([], DayOrMonthF, Hour, Minute, DayOrMonthV) ->
    {DayOrMonthF, Hour, Minute, DayOrMonthV};
 parseRotateHourSpec([$H, M1, M2], DayOrMonthF, Hour, _Minute, DayOrMonthV) when M1 >= $0, M1 =< $9, M2 >= $0, M2 =< $9 ->
    Min = list_to_integer([M1, M2]),
-   ?IIF(Min >= 0 andalso Min =< 59, {DayOrMonthF, Hour, Min, DayOrMonthV}, {error, invalid_date_spec});
+   ?lgCASE(Min >= 0 andalso Min =< 59, {DayOrMonthF, Hour, Min, DayOrMonthV}, {error, invalid_date_spec});
 parseRotateHourSpec([$H, M], DayOrMonthF, Hour, _Minute, DayOrMonthV) when M >= $0, M =< $9 ->
    {DayOrMonthF, Hour, M - $0, DayOrMonthV};
 parseRotateHourSpec(_, _DayOrMonth, _Hour, _Minute, _DayOrMonthV) ->
@@ -231,7 +231,7 @@ parseRotateDaySpec([], DayOrMonthF, Hour, Minute, DayOrMonthV) ->
    {DayOrMonthF, Hour, Minute, DayOrMonthV};
 parseRotateDaySpec([$D, D1, D2 | T], DayOrMonthF, _Hour, _Minute, DayOrMonthV) when D1 > $0, D1 < $9, D2 > $0, D2 < $9 ->
    Day = list_to_integer([D1, D2]),
-   ?IIF(Day >= 0 andalso Day =< 23, parseRotateHourSpec(T, DayOrMonthF, Day, 0, DayOrMonthV), {error, invalid_date_spec});
+   ?lgCASE(Day >= 0 andalso Day =< 23, parseRotateHourSpec(T, DayOrMonthF, Day, 0, DayOrMonthV), {error, invalid_date_spec});
 parseRotateDaySpec([$D, D | T], DayOrMonthF, _Hour, _Minute, DayOrMonthV) when D >= $0, D =< $9 ->
    parseRotateHourSpec(T, DayOrMonthF, D - $0, 0, DayOrMonthV);
 parseRotateDaySpec(T, DayOrMonth, Hour, Minute, DayOrMonthV) ->
@@ -244,7 +244,7 @@ parseRotateDateSpec([$$, $M, L | T], _DayOrMonthF, _Hour, _Minute, DayOrMonthV) 
    parseRotateDaySpec(T, last, 0, 0, DayOrMonthV);
 parseRotateDateSpec([$$, $M, M1, M2 | T], _DayOrMonthF, _Hour, _Minute, _DayOrMonthV) when M1 >= $0, M1 =< $9, M2 >= $0, M2 =< $9 ->
    Date = list_to_integer([M1, M2]),
-   ?IIF(Date >= 1 andalso Date =< 31, parseRotateDaySpec(T, date, 0, 0, Date), {error, invalid_date_spec});
+   ?lgCASE(Date >= 1 andalso Date =< 31, parseRotateDaySpec(T, date, 0, 0, Date), {error, invalid_date_spec});
 parseRotateDateSpec([$$, $M, M | T], _DayOrMonthF, _Hour, _Minute, _DayOrMonthV) when M >= $1, M =< $9 ->
    parseRotateDaySpec(T, date, 0, 0, M - $0);
 parseRotateDateSpec([$$ | T], DayOrMonthF, Hour, Minute, DayOrMonthV) ->
@@ -253,7 +253,7 @@ parseRotateDateSpec(_, _DayOrMonthF, _Hour, _Minute, _DayOrMonthV) ->
    {error, invalid_date_spec}.
 
 parseRotateSpec(Spec) ->
-   SpecList = ?IIF(is_binary(Spec), binary_to_list(Spec), Spec),
+   SpecList = ?lgCASE(is_binary(Spec), binary_to_list(Spec), Spec),
    case parseRotateDateSpec(SpecList, undefined, undefined, undefined, undefined) of
       {error, _} = ErrRet ->
          ErrRet;
@@ -406,8 +406,8 @@ checkHwm(#lgShaper{id = Id, hwm = Hwm, mps = Mps, lastTime = LastTime, dropped =
             true ->
                PastMs = NowTimeMs rem 1000,
                %% still in same second, but have exceeded the high water mark
-               NewDrops = ?IIF(isNeedFlush(FlushQueue, FlushThr), dropMsg(NowTime, Filter, 0), 0),
-               NewTimer = ?IIF(erlang:read_timer(Timer) =/= false, Timer, erlang:send_after(1000 - PastMs, self(), {mShaperExpired, Id})),
+               NewDrops = ?lgCASE(isNeedFlush(FlushQueue, FlushThr), dropMsg(NowTime, Filter, 0), 0),
+               NewTimer = ?lgCASE(erlang:read_timer(Timer) =/= false, Timer, erlang:send_after(1000 - PastMs, self(), {mShaperExpired, Id})),
                {false, 0, Shaper#lgShaper{dropped = Drop + NewDrops + 1, timer = NewTimer}};
             _ ->
                _ = erlang:cancel_timer(Shaper#lgShaper.timer),
@@ -436,7 +436,7 @@ dropMsg(LastTime, Filter, Count) ->
          %% otherwise we might discard gen_event internal
          %% messages, such as trapped EXITs
             {'$gen_info', Event} ->
-               NewCount = ?IIF(Filter(Event), Count, Count + 1),
+               NewCount = ?lgCASE(Filter(Event), Count, Count + 1),
                dropMsg(LastTime, Filter, NewCount)
          after 0 ->
             Count

@@ -1,6 +1,6 @@
 概述
 --------
-eLog is a Erlang logger. 基于lager3.9.0 rewrite
+eLog is a Erlang logger. 基于lager3.9.2 rewrite
 
 TODO
 --------

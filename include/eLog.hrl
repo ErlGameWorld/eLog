@@ -1,3 +1,6 @@
+-ifndef(__lgeLog__).
+-define(__lgeLog__, 1).
+
 -include("lgCom.hrl").
 
 %% 该宏用于确保eLogCfg模块初始化了 任何使用eLog的App启动后请调用一次
@@ -19,15 +22,10 @@
    ?lgLog(?LgDefSink, Severity, self(), node(), ?MODULE, ?FUNCTION_NAME, ?LINE, eLog:getMd(), Format, Args, ?LgDefTruncation, Safety)).
 
 -define(lgLog(Severity, Metadata, Format, Args, Safety),
-   ?lgLog(?LgDefSink, Severity, self(), node(), ?MODULE, ?FUNCTION_NAME, ?LINE, Metadata ++ eLog:getMd(), Format, Args, ?LgDefTruncation, Safety)).
+   ?lgLog(?LgDefSink, Severity, self(), node(), ?MODULE, ?FUNCTION_NAME, ?LINE, ?lgCASE(eLog:getMdPd(), undefined, Metadata, Md, Metadata ++ Md), Format, Args, ?LgDefTruncation, Safety)).
 
 -define(lgLog(Sink, Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Safety),
-   case ?eLogCfg:get(Sink) band Severity of
-      0 ->
-         ok;
-      _ ->
-         eLog:doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety)
-   end).
+   (?eLogCfg:get(Sink) band Severity == Severity andalso eLog:doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety))).
 
 -define(lgNone(Format), ?lgLog(?llvNone, Format, undefined, safe)).
 -define(lgNone(Format, Args), ?lgLog(?llvNone, Format, Args, safe)).
@@ -64,4 +62,6 @@
 -define(lgEmergency(Format), ?lgLog(?llvEmergency, Format, undefined, safe)).
 -define(lgEmergency(Format, Args), ?lgLog(?llvEmergency, Format, Args, safe)).
 -define(lgEmergency(Metadata, Format, Args), ?lgLog(?llvEmergency, Metadata, Format, Args, safe)).
+
+-endif.
 

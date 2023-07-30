@@ -393,14 +393,14 @@ formatCrashReport(Report, Neighbours) ->
 
    {Class, Reason, Trace} = get_value(error_info, Report),
    {Md, ReasonStr} = formatReasonMd({Reason, Trace}),
-   Type = ?IIF(Class == exit, <<"exited">>, <<"crashed">>),
-   {Md0 ++ Md, eFmt:formatBin(<<"Process ~w with ~w neighbours ~s with reason: ~s">>, [Name, length(Neighbours), Type, ReasonStr])}.
+   Type = ?lgCASE(Class == exit, <<"exited">>, <<"crashed">>),
+   {Md0 ++ Md, eFmt:format(<<"Process ~w with ~w neighbours ~s with reason: ~s">>, [Name, length(Neighbours), Type, ReasonStr])}.
 
 formatOffender(Off) ->
    case get_value(mfargs, Off) of
       undefined ->
          %% supervisor_bridge
-         eFmt:formatBin(<<"at module ~w at ~w">>, [get_value(mod, Off), get_value(pid, Off)]);
+         eFmt:format(<<"at module ~w at ~w">>, [get_value(mod, Off), get_value(pid, Off)]);
       MFArgs ->
          %% regular supervisor
          {_, MFA} = formatMfaMd(MFArgs),
@@ -414,7 +414,7 @@ formatOffender(Off) ->
                Id ->
                   Id
             end,
-         eFmt:formatBin(<<"Name ~w at module ~s at ~w">>, [Name, MFA, get_value(pid, Off)])
+         eFmt:format(<<"Name ~w at module ~s at ~w">>, [Name, MFA, get_value(pid, Off)])
    end.
 
 %% backwards compatability shim
@@ -481,7 +481,7 @@ formatReasonMd({system_limit, [{M, F, _} | _] = Trace}) ->
          {ets, new} ->
             <<"maximum number of ETS tables exceeded">>;
          _ ->
-            eFmt:formatBin(<<"~p">>, [Trace], [{charsLimit, 500}])
+            eFmt:format(<<"~p">>, [Trace], [{charsLimit, 500}])
       end,
    {[{reason, system_limit}], <<"system limit: ", Limit/binary>>};
 formatReasonMd({badarg, [MFA, MFA2 | _]}) ->
@@ -505,7 +505,7 @@ formatReasonMd({{badarg, Stack}, _}) ->
 formatReasonMd({{badarity, {Fun, Args}}, [MFA | _]}) ->
    {arity, Arity} = lists:keyfind(arity, 1, erlang:fun_info(Fun)),
    {Md, Formatted} = formatMfaMd(MFA),
-   {[{reason, badarity} | Md], eFmt:formatBin(<<"fun called with wrong arity of ~w instead of ~w in ~s">>, [length(Args), Arity, Formatted])};
+   {[{reason, badarity} | Md], eFmt:format(<<"fun called with wrong arity of ~w instead of ~w in ~s">>, [length(Args), Arity, Formatted])};
 formatReasonMd({noproc, MFA}) ->
    {Md, Formatted} = formatMfaMd(MFA),
    {[{reason, noproc} | Md], <<"no such process or port in call to ", Formatted/binary>>};
@@ -522,7 +522,7 @@ formatReasonMd({Reason, [{M, F, A, Props} | _]}) when is_atom(M), is_atom(F), is
    {_, Formatted2} = formatMfaMd({M, F, A, Props}),
    {Md, <<Formatted/binary, " in ", Formatted2/binary>>};
 formatReasonMd(Reason) ->
-   {[], eFmt:formatBin(<<"~p">>, [Reason], [{charsLimit, 500}])}.
+   {[], eFmt:format(<<"~p">>, [Reason], [{charsLimit, 500}])}.
 
 %% backwards compatability shim
 formatMfa(MFA) ->
@@ -531,9 +531,9 @@ formatMfa(MFA) ->
 -spec formatMfaMd(any()) -> {[{atom(), any()}], list()}.
 formatMfaMd({M, F, A}) when is_list(A) ->
    ArgsStr = formatArgs(A, <<>>),
-   {[{module, M}, {function, F}], eFmt:formatBin(<<"~w:~w(", ArgsStr/binary, ")">>, [M, F])};
+   {[{module, M}, {function, F}], eFmt:format(<<"~w:~w(", ArgsStr/binary, ")">>, [M, F])};
 formatMfaMd({M, F, A}) when is_integer(A) ->
-   {[{module, M}, {function, F}], eFmt:formatBin(<<"~w:~w/~w">>, [M, F, A])};
+   {[{module, M}, {function, F}], eFmt:format(<<"~w:~w/~w">>, [M, F, A])};
 formatMfaMd({M, F, A, Props}) when is_list(Props) ->
    case get_value(line, Props) of
       undefined ->
@@ -551,22 +551,22 @@ formatMfaMd([{M, F, A, Props} | _]) when is_list(Props) ->
    %% to print a lower one, but it is hard to programatically decide.
    formatMfaMd({M, F, A, Props});
 formatMfaMd(Other) ->
-   {[], eFmt:formatBin(<<"~w">>, [Other])}.
+   {[], eFmt:format(<<"~w">>, [Other])}.
 
 formatArgs([], ArgsAcc) ->
    ArgsAcc;
 formatArgs([H], ArgsAcc) ->
-   Str = eFmt:formatBin(<<"~p">>, [H], [{charsLimit, 100}]),
+   Str = eFmt:format(<<"~p">>, [H], [{charsLimit, 100}]),
    <<ArgsAcc/binary, Str/binary>>;
 formatArgs([H | T], ArgsAcc) ->
-   Str = eFmt:formatBin(<<"~p">>, [H], [{charsLimit, 100}]),
+   Str = eFmt:format(<<"~p">>, [H], [{charsLimit, 100}]),
    formatArgs(T, <<ArgsAcc/binary, Str/binary, ",">>).
 
 formatVal(Val) ->
-   eFmt:formatBin(<<"~p">>, [Val], [{charsLimit, 500}]).
+   eFmt:format(<<"~p">>, [Val], [{charsLimit, 500}]).
 
 printSillyList(L) ->
-   eFmt:formatBin(<<"~p">>, [L], [{charsLimit, ?LgDefTruncation}]).
+   eFmt:format(<<"~p">>, [L], [{charsLimit, ?LgDefTruncation}]).
 
 %% @doc Faster than proplists, but with the same API as long as you don't need to
 %% handle bare atom keys

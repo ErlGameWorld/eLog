@@ -73,11 +73,11 @@ init(Opts) ->
    %% 需要二次转换的配置在这里处理
    Level = lgUtil:configToMask(CfgLevel),
    SyncOn = lgUtil:configToMask(CfgSyncOn),
-   CheckInt = ?IIF(CfgCheckInt == always, 0, CfgCheckInt),
+   CheckInt = ?lgCASE(CfgCheckInt == always, 0, CfgCheckInt),
    {ok, Date} = lgUtil:parseRotateSpec(CfgDate),
    FileName = lgUtil:parsePath(FBName),
    scheduleRotation(Date, FBName),
-   FmtCfg = ?IIF(CfgFmtCfg =/= [], CfgFmtCfg, begin MdWhitelist = lgUtil:get_env(mdWhitelist, []), lgFmtTer:fmtCfg(MdWhitelist) end),
+   FmtCfg = ?lgCASE(CfgFmtCfg =/= [], CfgFmtCfg, begin MdWhitelist = lgUtil:get_env(mdWhitelist, []), lgFmtTer:fmtCfg(MdWhitelist) end),
 
    Shaper = #lgShaper{hwm = Hwm, flushQueue = FlushQueue, flushThr = FlushThr, id = FBName},
    TemState = #state{
@@ -122,8 +122,9 @@ handleCall(_Msg, _State) ->
    ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
    {reply, ok}.
 
-handleEvent({mWriteLog, Message}, #state{fBName = FBName, level = Level, shaper = Shaper, fmtTer = FmtTer, fmtCfg = FmtCfg} = State) ->
-   case lgUtil:isLoggAble(Message, Level, {lgBkdFile, FBName}) of
+handleEvent({mWriteLog, Message}, #state{fBName = _FBName, level = Level, shaper = Shaper, fmtTer = FmtTer, fmtCfg = FmtCfg} = State) ->
+   %case lgUtil:isLoggAble(Message, Level, {lgBkdFile, FBName}) of
+   case Level band Message#lgMsg.severity /= 0 of
       true ->
          #lgMsg{timestamp = Timestamp, severity = Severity} = Message,
          case lgUtil:checkHwm(Shaper) of
@@ -199,7 +200,7 @@ writeLog(#state{fileName = FileName, fd = Fd, inode = Inode, cTime = CTime, flap
                      writeFile(NewState, Level, Msg)
                end;
             {error, Reason} ->
-               ?IIF(Flap, State, begin ?INT_LOG(?llvError, <<"Failed to reopen log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]), State#state{flap = true} end)
+               ?lgCASE(Flap, State, begin ?INT_LOG(?llvError, <<"Failed to reopen log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]), State#state{flap = true} end)
          end;
       _ ->
          writeFile(State, Level, Msg)
@@ -252,11 +253,11 @@ configToId(Config) ->
    end.
 
 checkOpts([], IsFile) ->
-   ?IIF(IsFile, true, {error, no_file_name});
+   ?lgCASE(IsFile, true, {error, no_file_name});
 checkOpts([{file, _File} | Tail], _IsFile) ->
    checkOpts(Tail, true);
 checkOpts([{level, Level} | Tail], IsFile) ->
-   ?IIF(lgUtil:validateLogLevel(Level) =/= false, checkOpts(Tail, IsFile), {error, {invalid_log_level, Level}});
+   ?lgCASE(lgUtil:validateLogLevel(Level) =/= false, checkOpts(Tail, IsFile), {error, {invalid_log_level, Level}});
 checkOpts([{size, Size} | Tail], IsFile) when is_integer(Size), Size >= 0 ->
    checkOpts(Tail, IsFile);
 checkOpts([{count, Count} | Tail], IsFile) when is_integer(Count), Count >= 0 ->
@@ -274,7 +275,7 @@ checkOpts([{syncSize, SyncSize} | Tail], IsFile) when is_integer(SyncSize), Sync
 checkOpts([{checkInt, CheckInt} | Tail], IsFile) when is_integer(CheckInt), CheckInt >= 0; CheckInt == always ->
    checkOpts(Tail, IsFile);
 checkOpts([{syncOn, Level} | Tail], IsFile) ->
-   ?IIF(lgUtil:validateLogLevel(Level) =/= false, checkOpts(Tail, IsFile), {error, {invalid_sync_on, Level}});
+   ?lgCASE(lgUtil:validateLogLevel(Level) =/= false, checkOpts(Tail, IsFile), {error, {invalid_sync_on, Level}});
 checkOpts([{fmtTer, Fmt} | Tail], IsFile) when is_atom(Fmt) ->
    checkOpts(Tail, IsFile);
 checkOpts([{fmtCfg, FmtCfg} | Tail], IsFile) when is_list(FmtCfg) ->

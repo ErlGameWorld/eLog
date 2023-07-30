@@ -41,7 +41,7 @@ startSink(?LgDefSink) -> doStart();
 startSink(Sink) ->
    AllSinksDef = lgUtil:get_env(extraSinks, []),
    SinkValue = lists:keyfind(Sink, 1, AllSinksDef),
-   SinkOpts = ?IIF(SinkValue == false, [], element(2, SinkValue)),
+   SinkOpts = ?lgCASE(SinkValue == false, [], element(2, SinkValue)),
    startSink(Sink, SinkOpts).
 
 startSink(Sink, Opts) ->
