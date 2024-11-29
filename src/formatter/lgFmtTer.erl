@@ -64,22 +64,42 @@ fmtCfg(MetaWhitelist) ->
    [datetime, sev, node, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>] ++
       [{M, [atom_to_binary(M), <<"=">>, M, "|"], [<<>>]} || M <- MetaWhitelist] ++ [message, <<"\n">>].
 
+%% @doc Print the format string `Fmt' with `Args' safely with a size
+%% limit of `Limit'. If the format string is invalid, or not enough
+%% arguments are supplied 'FORMAT ERROR' is printed with the offending
+%% arguments. The caller is NOT crashed.
+
+unsafeFormat(Fmt, Args) ->
+   try eFmt:formatIol(Fmt, Args)
+   catch
+      _:_ -> eFmt:formatIol(<<"FORMAT ERROR SAFE: ~p ~p">>, [Fmt, Args])
+   end.
+
+safeFormat(Fmt, Args, Limit) ->
+   try eFmt:formatIol(Fmt, Args, Limit)
+   catch
+      _:_ ->
+         eFmt:formatIol(<<"FORMAT ERROR UNSAFE: ~p ~p">>, [Fmt, Args], Limit)
+   end.
+
 % Level, Pid, Node, Module, Function, FunctionArity, Line
 
 -define(FixMd, [pid, node, module, function, line]).
 
 -spec output(term(), lgMsg()) -> iolist().
-output(message, LgMsg) -> LgMsg#lgMsg.message;
-output(datetime, LgMsg) -> LgMsg#lgMsg.datetime;
+output(message, LgMsg) ->
+   #lgMsg{msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size} = LgMsg,
+   ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format);
+output(datetime, LgMsg) -> lgUtil:msToBinStr(LgMsg#lgMsg.timestamp);
 output(pid, LgMsg) -> pid_to_list(LgMsg#lgMsg.pid);
-output(node, LgMsg) -> atom_to_binary(LgMsg#lgMsg.node, utf8);
+output(node, _LgMsg) -> ?eLogCfg:get(?eLogNodeName);
 output(module, LgMsg) -> atom_to_binary(LgMsg#lgMsg.module, utf8);
 output(function, LgMsg) -> atom_to_binary(LgMsg#lgMsg.function, utf8);
 output(line, LgMsg) -> integer_to_binary(LgMsg#lgMsg.line);
 output(severity, LgMsg) -> loSeverity(LgMsg#lgMsg.severity);
 output(upSeverity, LgMsg) -> upSeverity(LgMsg#lgMsg.severity);
 output(blank, _LgMsg) -> <<" ">>;
-output(node, LgMsg) -> atom_to_binary(LgMsg#lgMsg.node, utf8);
+output(node, _LgMsg) -> ?eLogCfg:get(?eLogNodeName);
 output(sev, LgMsg) -> sevSeverity(LgMsg#lgMsg.severity);
 output(metadata, LgMsg) -> mdJoin(LgMsg#lgMsg.metadata, <<"|">>, <<>>);
 output({blank, Fill}, _LgMsg) -> Fill;
@@ -110,17 +130,19 @@ output({Prop, Present, Absent, Width}, LgMsg) when is_atom(Prop) ->
    end;
 output(Other, _) -> makeStr(Other).
 
-output(message, LgMsg, _Width) -> LgMsg#lgMsg.message;
-output(datetime, LgMsg, _Width) -> LgMsg#lgMsg.datetime;
+output(message, LgMsg, _Width) ->
+   #lgMsg{msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size} = LgMsg,
+   ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format);
+output(datetime, LgMsg, _Width) -> lgUtil:msToBinStr(LgMsg#lgMsg.timestamp);
 output(pid, LgMsg, _Width) -> pid_to_list(LgMsg#lgMsg.pid);
-output(node, LgMsg, _Width) -> atom_to_binary(LgMsg#lgMsg.node, utf8);
+output(node, _LgMsg, _Width) -> ?eLogCfg:get(?eLogNodeName);
 output(module, LgMsg, _Width) -> atom_to_binary(LgMsg#lgMsg.module, utf8);
 output(function, LgMsg, _Width) -> atom_to_binary(LgMsg#lgMsg.function, utf8);
 output(line, LgMsg, _Width) -> integer_to_binary(LgMsg#lgMsg.line);
 output(severity, LgMsg, _Width) -> loSeverity(LgMsg#lgMsg.severity);
 output(upSeverity, LgMsg, _Width) -> upSeverity(LgMsg#lgMsg.severity);
 output(blank, _LgMsg, _Width) -> <<" ">>;
-output(node, LgMsg, _Width) -> atom_to_binary(LgMsg#lgMsg.node, utf8);
+output(node, _LgMsg, _Width) -> ?eLogCfg:get(?eLogNodeName);
 output(sev, LgMsg, _Width) -> sevSeverity(LgMsg#lgMsg.severity);
 output({blank, Fill}, _LgMsg, _Width) -> Fill;
 output(metadata, LgMsg, _Width) -> mdJoin(LgMsg#lgMsg.metadata, <<"|">>, <<>>);

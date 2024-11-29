@@ -500,9 +500,11 @@ isErrorReport(crash_report) -> true;
 isErrorReport(_) -> false.
 
 -spec isLoggAble(lgMsg(), lgMaskLevel(), term()) -> boolean().
-isLoggAble(LgMsg, Mask, MyName) ->
-   #lgMsg{severity = Severity, destinations = Destinations} = LgMsg,
-   (Severity band Mask) =/= 0 orelse lists:member(MyName, Destinations).
+isLoggAble(LgMsg, Mask, _MyName) ->
+   %#lgMsg{severity = Severity, destinations = Destinations} = LgMsg,
+   %(Severity band Mask) =/= 0 orelse lists:member(MyName, Destinations).
+   #lgMsg{severity = Severity} = LgMsg,
+   Severity band Mask =/= 0.
 
 parsePath(FBName) ->
    LogRoot = lgUtil:get_env(logRoot, ?LgDefLogRoot),

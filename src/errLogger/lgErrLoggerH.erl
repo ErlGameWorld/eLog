@@ -45,30 +45,30 @@
       true ->
          if
             is_pid(PidOrMd) ->
-               eLog:doLogImpl(Severity, PidOrMd, node(), 'Undef', 'Undef', 0, [], Msg, [], -1, Sink, safe);
+               eLog:doLogImpl(Severity, PidOrMd, 'Undef', 'Undef', 0, [], Msg, [], -1, Sink, safe);
             is_list(PidOrMd) ->
                {_, LogPid} = lists:keyfind(pid, 1, PidOrMd),
-               eLog:doLogImpl(Severity, LogPid, node(), 'Undef', 'Undef', 0, lists:keydelete(pid, 1, PidOrMd), Msg, [], -1, Sink, safe);
+               eLog:doLogImpl(Severity, LogPid, 'Undef', 'Undef', 0, lists:keydelete(pid, 1, PidOrMd), Msg, [], -1, Sink, safe);
             true ->
-               eLog:doLogImpl(Severity, list_to_pid("<0.0.0>"), node(), 'Undef', 'Undef', 0, [], Msg, [{tag, PidOrMd}], -1, Sink, safe)
+               eLog:doLogImpl(Severity, list_to_pid("<0.0.0>"), 'Undef', 'Undef', 0, [], Msg, [{tag, PidOrMd}], -1, Sink, safe)
          end,
          logged;
       _ -> no_log
    end).
 
-% doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety)
+% doLogImpl(Severity, Pid, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety)
 
 -define(LOGFMT(Sink, Severity, PidOrMd, Fmt, Args),
    case ?LgShouldLog(Sink, Severity) of
       true ->
          if
             is_pid(PidOrMd) ->
-               eLog:doLogImpl(Severity, PidOrMd, node(), 'Undef', 'Undef', 0, [], Fmt, Args, -1, Sink, safe);
+               eLog:doLogImpl(Severity, PidOrMd, 'Undef', 'Undef', 0, [], Fmt, Args, -1, Sink, safe);
             is_list(PidOrMd) ->
                {_, LogPid} = lists:keyfind(pid, 1, PidOrMd),
-               eLog:doLogImpl(Severity, LogPid, node(), 'Undef', 'Undef', 0, lists:keydelete(pid, 1, PidOrMd), Fmt, Args, -1, Sink, safe);
+               eLog:doLogImpl(Severity, LogPid, 'Undef', 'Undef', 0, lists:keydelete(pid, 1, PidOrMd), Fmt, Args, -1, Sink, safe);
             true ->
-               eLog:doLogImpl(Severity, list_to_pid("<0.0.0>"), node(), 'Undef', 'Undef', 0, [{tag, PidOrMd}], Fmt, Args, -1, Sink, safe)
+               eLog:doLogImpl(Severity, list_to_pid("<0.0.0>"), 'Undef', 'Undef', 0, [{tag, PidOrMd}], Fmt, Args, -1, Sink, safe)
          end,
          logged;
       _ -> no_log

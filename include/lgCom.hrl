@@ -13,6 +13,9 @@
 -define(eLogEts, eLogEts).
 -define(eLogPtTl, eLogPtTl).
 
+%% 当前节点名
+-define(eLogNodeName, eLogNodeName).
+
 -define(LgDefSink, eLogEvent).
 -define(LgDefTruncation, 4096).
 

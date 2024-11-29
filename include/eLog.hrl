@@ -9,8 +9,9 @@
    case ets:info(?eLogEts) of
       undefined ->
          ets:new(?eLogEts, [named_table, public]),
-         ets:insert(?eLogEts, {Sink, ?llvNone}),
-         lgKvsToBeam:load(?eLogCfg, [{Sink, ?llvNone}]);
+         NodeName = atom_to_binary(node(), utf8),
+         ets:insert(?eLogEts, [{Sink, ?llvNone}, {?eLogNodeName, NodeName}]),
+         lgKvsToBeam:load(?eLogCfg, [{Sink, ?llvNone}, {?eLogNodeName, NodeName}]);
       _ ->
          ignore
    end).
@@ -19,13 +20,13 @@
 %% Level, Pid, Node, Module, Function,  Line, Other
 
 -define(lgLog(Severity, Format, Args, Safety),
-   ?lgLog(?LgDefSink, Severity, self(), node(), ?MODULE, ?FUNCTION_NAME, ?LINE, eLog:getMd(), Format, Args, ?LgDefTruncation, Safety)).
+   ?lgLog(?LgDefSink, Severity, self(), ?MODULE, ?FUNCTION_NAME, ?LINE, eLog:getMd(), Format, Args, ?LgDefTruncation, Safety)).
 
 -define(lgLog(Severity, Metadata, Format, Args, Safety),
-   ?lgLog(?LgDefSink, Severity, self(), node(), ?MODULE, ?FUNCTION_NAME, ?LINE, ?lgCASE(eLog:getMdPd(), undefined, Metadata, Md, Metadata ++ Md), Format, Args, ?LgDefTruncation, Safety)).
+   ?lgLog(?LgDefSink, Severity, self(), ?MODULE, ?FUNCTION_NAME, ?LINE, ?lgCASE(eLog:getMdPd(), undefined, Metadata, Md, Metadata ++ Md), Format, Args, ?LgDefTruncation, Safety)).
 
--define(lgLog(Sink, Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Safety),
-   (?eLogCfg:get(Sink) band Severity == Severity andalso eLog:doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety))).
+-define(lgLog(Sink, Severity, Pid, Module, Function, Line, Metadata, Format, Args, Size, Safety),
+   (?eLogCfg:get(Sink) band Severity == Severity andalso eLog:doLogImpl(Severity, Pid, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety))).
 
 -define(lgNone(Format), ?lgLog(?llvNone, Format, undefined, safe)).
 -define(lgNone(Format, Args), ?lgLog(?llvNone, Format, Args, safe)).

@@ -136,10 +136,10 @@ handleEvent({mWriteLog, Message}, #state{fBName = _FBName, level = Level, shaper
                      true ->
                         State;
                      _ ->
-                        ReportStr = eFmt:format(<<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>, [Drop, NewShaper#lgShaper.hwm]),
+                        Format = <<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>,
+                        Args = [Drop, NewShaper#lgShaper.hwm],
                         NowMs = lgTime:nowMs(),
-                        NowStr = lgUtil:msToBinStr(NowMs),
-                        ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = NowStr, timestamp = NowMs, message = ReportStr, destinations = []},
+                        ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], timestamp = NowMs, msgFormat = Format, msgArgs = Args},
                         writeLog(State, NowMs, ?llvWarning, FmtTer:format(ReportMsg, FmtCfg))
                   end,
                {noreply, writeLog(TemState#state{shaper = NewShaper}, Timestamp, Severity, FmtTer:format(Message, FmtCfg))};
@@ -164,10 +164,10 @@ handleInfo({mShaperExpired, FBName}, #state{shaper = Shaper, fBName = FBName, fm
       0 ->
          ignore;
       Dropped ->
-         ReportStr = eFmt:format(<<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>, [Dropped, Shaper#lgShaper.hwm]),
+         Format = <<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>,
+         Args = [Dropped, Shaper#lgShaper.hwm],
          NowMs = lgTime:nowMs(),
-         NowStr = lgUtil:msToBinStr(NowMs),
-         ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = NowStr, timestamp = NowMs, message = ReportStr, destinations = []},
+         ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], timestamp = NowMs, msgFormat = Format, msgArgs = Args},
          writeLog(State, NowMs, ?llvWarning, FmtTer:format(ReportMsg, FmtCfg))
    end,
    {noreply, State#state{shaper = Shaper#lgShaper{dropped = 0}}};
@@ -227,16 +227,11 @@ writeFile(#state{fd = Fd, fileName = FileName, flap = Flap, syncOn = SyncOn} = S
          State
    end.
 
-isWriteCheck(Fd, LastCheck, CheckInt, Name, Inode, CTime, Timestamp) ->
+isWriteCheck(undefined, _LastCheck, _CheckInt, _Name, _Inode, _CTime, _Timestamp) ->
+   true;
+isWriteCheck(_Fd, LastCheck, CheckInt, _Name, _Inode, _CTime, Timestamp) ->
    DiffTime = abs(Timestamp - LastCheck),
-   case DiffTime >= CheckInt orelse Fd == undefined of
-      true ->
-         true;
-      _ ->
-         % We need to know if the file has changed "out from under eLog" so we don't write to an invalid Fd
-         {Result, _FInfo} = lgUtil:isFileChanged(Name, Inode, CTime),
-         Result
-   end.
+   DiffTime >= CheckInt.
 
 %% Convert the config into a gen_event handler ID
 configToId(Config) ->

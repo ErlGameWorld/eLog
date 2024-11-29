@@ -6,8 +6,6 @@
 -define(ERR(Format), error_logger:error_msg(Format)).
 -define(ERR(Format, Args), error_logger:error_msg(Format, Args)).
 
--define(Print(Args), io:format("IMY************~p~n", [Args])).
-
 %% 额外进程字典key
 -define(PdMdKey, pdLgMd).
 -define(LgTrackSink, '_trace_sink').
@@ -56,7 +54,7 @@
 -define(LgDefSyncLevel, error).
 -define(LgDefSyncInt, 1000).             %% 单位毫秒
 -define(LgDefSyncSize, 1024 * 64).       %% 64kb
--define(LgDefCheckInt, 1000).            %% 单位毫秒
+-define(LgDefCheckInt, 10000).           %% 单位毫秒
 -define(LgDefCheckHwm, undefined).
 -define(LgDefFlushQueue, false).
 -define(LgDefFlushThr, 10).
@@ -98,15 +96,16 @@
 -record(lgMsg, {
    severity :: lgNumLevel()
    , pid :: pid()
-   , node :: node()
    , module :: module()
    , function :: atom()
    , line :: integer()
    , metadata :: [tuple()]
-   , datetime :: binary()
    , timestamp :: non_neg_integer()
-   , message :: list()
-   , destinations :: list()
+   , msgFormat :: list()
+   , msgArgs :: list()
+   , msgSafety = unsafe :: atom()
+   , msgFormatSize = 0 :: integer()
+   % , destinations :: list()
 }).
 
 -type lgShaper() :: #lgShaper{}.
@@ -124,7 +123,7 @@
 -define(LgShouldLog(Level), ?eLogCfg:get(?LgDefSink) band Level =/= 0).
 
 -define(LgNotify(Level, Pid, Format, Args),
-   gen_emm:info_notify(?LgDefSink, {mWriteLog, #lgMsg{severity = Level, pid = Pid, node = node(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], datetime = lgUtil:msToBinStr(), timestamp = lgTime:nowMs(), message = eFmt:format(Format, Args), destinations = []}})).
+   gen_emm:info_notify(?LgDefSink, {mWriteLog, #lgMsg{severity = Level, pid = Pid, module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], timestamp = lgTime:nowMs(), msgFormat = Format, msgArgs = Args}})).
 
 %%仅供内部使用仅内部非阻塞日志记录调用，当我们仍在启动大型啤酒时尝试进行日志记录（通常为错误）时，会有一些特殊处理。
 -define(INT_LOG(Level, Format, Args),

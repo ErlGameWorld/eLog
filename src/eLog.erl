@@ -13,10 +13,8 @@
    , stop/0
 
    %% log and log param
-   , dispatchLog/12
-   , doLogImpl/12
-   , safeFormat/3
-   , unsafeFormat/2
+   , dispatchLog/11
+   , doLogImpl/11
    , getMd/0
    , setMd/1
    , getMdPd/0
@@ -75,20 +73,16 @@ start() ->
 stop() ->
    application:stop(eLog).
 
--spec dispatchLog(atom(), lgAtomLevel(), pid(), node(), atom(), atom(), integer(), list(), string(), list() | none, pos_integer(), safe | unsafe) -> ok.
-dispatchLog(Sink, Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Safety) ->
-   ?eLogCfg:get(Sink) band Severity == Severity andalso doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety).
+-spec dispatchLog(atom(), lgAtomLevel(), pid(), atom(), atom(), integer(), list(), string(), list() | none, pos_integer(), safe | unsafe) -> ok.
+dispatchLog(Sink, Severity, Pid, Module, Function, Line, Metadata, Format, Args, Size, Safety) ->
+   ?eLogCfg:get(Sink) band Severity == Severity andalso doLogImpl(Severity, Pid, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety).
 
-doLogImpl(Severity, Pid, Node, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety) ->
-   TraceFilters = lgConfig:ptGet({Sink, trace}, []),
-   Destinations = ?lgCASE(TraceFilters =/= [], lgUtil:check_traces(Metadata, Severity, TraceFilters, []), []),
-
-   MsgStr = ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format),
+doLogImpl(Severity, Pid, Module, Function, Line, Metadata, Format, Args, Size, Sink, Safety) ->
+   % TraceFilters = lgConfig:ptGet({Sink, trace}, []),  %% 这个功能还没用上
+   % Destinations = [], %  %% 这个功能还没用上 ?lgCASE(TraceFilters =/= [], lgUtil:check_traces(Metadata, Severity, TraceFilters, []), []),
    NowMs = lgTime:nowMs(),
-   NowStr = lgUtil:msToBinStr(NowMs),
-   LgMsg = #lgMsg{severity = Severity, pid = Pid, node = Node, module = Module, function = Function, line = Line, metadata = Metadata, datetime = NowStr, timestamp = NowMs, message = MsgStr, destinations = Destinations},
-
-   case lgConfig:ptGet({Sink, async}, false) of
+   LgMsg = #lgMsg{severity = Severity, pid = Pid, module = Module, function = Function, line = Line, metadata = Metadata, timestamp = NowMs, msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size},
+   case lgConfig:ptGet({Sink, async}, true) of
       true ->
          gen_emm:info_notify(Sink, {mWriteLog, LgMsg});
       _ ->
@@ -489,24 +483,6 @@ add_trace_to_loglevel_config(Trace, Sink) ->
          eLog:upLogLevelCfg(Sink);
       _ ->
          ok
-   end.
-
-%% @doc Print the format string `Fmt' with `Args' safely with a size
-%% limit of `Limit'. If the format string is invalid, or not enough
-%% arguments are supplied 'FORMAT ERROR' is printed with the offending
-%% arguments. The caller is NOT crashed.
-
-unsafeFormat(Fmt, Args) ->
-   try eFmt:format(Fmt, Args)
-   catch
-      _:_ -> eFmt:format(<<"FORMAT ERROR SAFE: ~p ~p">>, [Fmt, Args])
-   end.
-
-safeFormat(Fmt, Args, Limit) ->
-   try eFmt:format(Fmt, Args, Limit)
-   catch
-      _:_ ->
-         eFmt:format(<<"FORMAT ERROR UNSAFE: ~p ~p">>, [Fmt, Args], Limit)
    end.
 
 %% @private Print the format string `Fmt' with `Args' without a size limit.
