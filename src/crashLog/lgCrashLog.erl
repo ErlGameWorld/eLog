@@ -180,7 +180,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      TimeBinStr = lgUtil:msToBinStr(),
                      Time = [TimeBinStr, <<" =">>, ReportStr, <<"====\n\t\t">>],
                      NodeSuffix = otherNodeSuffix(Pid),
-                     Msg = eFmt:format(<<"~s~s~s~n">>, [Time, MsgStr, NodeSuffix]),
+                     Msg = eFmt:formatIol(<<"~s~s~s~n">>, [Time, MsgStr, NodeSuffix]),
                      case file:write(NewFD, unicode:characters_to_binary(Msg)) of
                         {error, Reason} when Flap == false ->
                            ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),

@@ -9,6 +9,7 @@
    format/2
    , format/3
    , fmtCfg/1
+   , errSeverity/1
 ]).
 
 %%
@@ -227,6 +228,16 @@ loSeverity(?llvCritical) -> <<"critical">>;
 loSeverity(?llvAlert) -> <<"alert">>;
 loSeverity(?llvEmergency) -> <<"emergency">>;
 loSeverity(?llvNone) -> <<"none">>.
+
+errSeverity(?llvDebug) -> 'debug';
+errSeverity(?llvInfo) -> 'info';
+errSeverity(?llvNotice) -> 'notice';
+errSeverity(?llvWarning) -> 'warning';
+errSeverity(?llvError) -> 'error';
+errSeverity(?llvCritical) -> 'critical';
+errSeverity(?llvAlert) -> 'alert';
+errSeverity(?llvEmergency) -> 'emergency';
+errSeverity(?llvNone) -> 'Undef'.
 
 upSeverity(?llvDebug) -> <<"DEBUG">>;
 upSeverity(?llvInfo) -> <<"INFO">>;
