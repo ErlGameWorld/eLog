@@ -19,6 +19,7 @@
    , nowMs/0
    , msToBinStr/0
    , msToBinStr/1
+   , msToIolStr/1
    , curYMDHMStr/0
    , parseRotateSpec/1
    , calcNextRotateMs/1
@@ -192,6 +193,13 @@ msToBinStr(MsTick) ->
    ThisMs = MsTick rem 1000,
    {{Y, M, D}, {H, Mi, S}} = erlang:universaltime_to_localtime(erlang:posixtime_to_universaltime(ThisSec)),
    <<(integer_to_binary(Y))/binary, "-", (i2b(M))/binary, "-", (i2b(D))/binary, " ", (i2b(H))/binary, ":", (i2b(Mi))/binary, ":", (i2b(S))/binary, ".", (i3b(ThisMs))/binary>>.
+
+msToIolStr(MsTick) ->
+   ThisSec = MsTick div 1000,
+   ThisMs = MsTick rem 1000,
+   {{Y, M, D}, {H, Mi, S}} = erlang:universaltime_to_localtime(erlang:posixtime_to_universaltime(ThisSec)),
+   [integer_to_binary(Y), "-", i2b(M), "-", i2b(D), " ", i2b(H), ":", i2b(Mi), ":", i2b(S), ".", i3b(ThisMs)].
+
 
 curYMDHMStr() ->
    {{Y, M, D}, {H, Mi, _S}} = lgTime:curDateTime(),

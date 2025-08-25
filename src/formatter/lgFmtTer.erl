@@ -60,9 +60,9 @@ format(LgMsg, Config, Colors) ->
    ].
 
 fmtCfg([]) ->
-   [datetime, sev, node, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>, message, <<"\n">>];
+   [datetime, sev, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>, message, <<"\n">>];
 fmtCfg(MetaWhitelist) ->
-   [datetime, sev, node, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>] ++
+   [datetime, sev, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>] ++
       [{M, [atom_to_binary(M), <<"=">>, M, "|"], [<<>>]} || M <- MetaWhitelist] ++ [message, <<"\n">>].
 
 %% @doc Print the format string `Fmt' with `Args' safely with a size
@@ -91,7 +91,7 @@ safeFormat(Fmt, Args, Limit) ->
 output(message, LgMsg) ->
    #lgMsg{msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size} = LgMsg,
    ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format);
-output(datetime, LgMsg) -> lgUtil:msToBinStr(LgMsg#lgMsg.timestamp);
+output(datetime, LgMsg) -> lgUtil:msToIolStr(LgMsg#lgMsg.timestamp);
 output(pid, LgMsg) -> pid_to_list(LgMsg#lgMsg.pid);
 output(node, _LgMsg) -> ?eLogCfg:get(?eLogNodeName);
 output(module, LgMsg) -> atom_to_binary(LgMsg#lgMsg.module, utf8);
@@ -134,7 +134,7 @@ output(Other, _) -> makeStr(Other).
 output(message, LgMsg, _Width) ->
    #lgMsg{msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size} = LgMsg,
    ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format);
-output(datetime, LgMsg, _Width) -> lgUtil:msToBinStr(LgMsg#lgMsg.timestamp);
+output(datetime, LgMsg, _Width) -> lgUtil:msToIolStr(LgMsg#lgMsg.timestamp);
 output(pid, LgMsg, _Width) -> pid_to_list(LgMsg#lgMsg.pid);
 output(node, _LgMsg, _Width) -> ?eLogCfg:get(?eLogNodeName);
 output(module, LgMsg, _Width) -> atom_to_binary(LgMsg#lgMsg.module, utf8);
