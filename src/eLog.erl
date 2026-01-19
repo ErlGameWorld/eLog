@@ -499,8 +499,9 @@ add_trace_to_loglevel_config(Trace, Sink) ->
 
 %% @private
 traceFunc(#trace_func_state_v1{pid = Pid, level = Level, format_string = Fmt} = FuncState, Event, ProcState) ->
-   _ = eLog:log(Level, Pid, Fmt, [Event, ProcState]),
-   check_timeout(decrement_count(FuncState)).
+   % _ = eLog:log(Level, Pid, Fmt, [Event, ProcState]),
+	(?eLogCfg:get(?LgDefSink) band Level == Level andalso eLog:doLogImpl(Level, Pid, ?MODULE, ?FUNCTION_NAME, ?LINE, [], Fmt, [Event, ProcState], ?LgDefTruncation, ?LgDefSink, safe)),
+	check_timeout(decrement_count(FuncState)).
 
 %% @private
 traceState(Pid, Level, Options) ->

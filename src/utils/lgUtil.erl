@@ -192,14 +192,28 @@ msToBinStr(MsTick) ->
    ThisSec = MsTick div 1000,
    ThisMs = MsTick rem 1000,
    {{Y, M, D}, {H, Mi, S}} = erlang:universaltime_to_localtime(erlang:posixtime_to_universaltime(ThisSec)),
-   <<(integer_to_binary(Y))/binary, "-", (i2b(M))/binary, "-", (i2b(D))/binary, " ", (i2b(H))/binary, ":", (i2b(Mi))/binary, ":", (i2b(S))/binary, ".", (i3b(ThisMs))/binary>>.
+	
+	case erlang:get('$dateCache') of
+		{{Y, M, D, H, Mi}, CachedStr} ->
+			<<CachedStr/binary, (i2b(S))/binary, ".", (i3b(ThisMs))/binary>>;
+		_ ->
+			CachedStr = <<(integer_to_binary(Y))/binary, "-", (i2b(M))/binary, "-", (i2b(D))/binary, " ", (i2b(H))/binary, ":", (i2b(Mi))/binary, ":">>,
+			erlang:put('$dateCache', {{Y, M, D, H, Mi}, CachedStr}),
+			<<CachedStr/binary, (i2b(S))/binary, ".", (i3b(ThisMs))/binary>>
+	end.
 
 msToIolStr(MsTick) ->
    ThisSec = MsTick div 1000,
    ThisMs = MsTick rem 1000,
    {{Y, M, D}, {H, Mi, S}} = erlang:universaltime_to_localtime(erlang:posixtime_to_universaltime(ThisSec)),
-   [integer_to_binary(Y), "-", i2b(M), "-", i2b(D), " ", i2b(H), ":", i2b(Mi), ":", i2b(S), ".", i3b(ThisMs)].
-
+	case erlang:get('$dateCache') of
+		{{Y, M, D, H, Mi}, CachedStr} ->
+			[CachedStr, i2b(S), ".", i3b(ThisMs)];
+		_ ->
+			CachedStr = <<(integer_to_binary(Y))/binary, "-", (i2b(M))/binary, "-", (i2b(D))/binary, " ", (i2b(H))/binary, ":", (i2b(Mi))/binary, ":">>,
+			erlang:put('$dateCache', {{Y, M, D, H, Mi}, CachedStr}),
+			[CachedStr, i2b(S), ".", i3b(ThisMs)]
+	end.
 
 curYMDHMStr() ->
    {{Y, M, D}, {H, Mi, _S}} = lgTime:curDateTime(),
