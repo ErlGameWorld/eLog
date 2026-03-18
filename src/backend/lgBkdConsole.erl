@@ -12,7 +12,7 @@
 -compile(inline).
 -compile({inline_size, 128}).
 
--define(LgDefConsoleFmtCfg, [datetime, color, sev, pid,module, <<":">>, function, <<"|">>, line, <<"|">>, message, eol()]).
+-define(LgDefConsoleFmtCfg, [datetime, color, sev, pid,module, <<":">>, function, <<"|">>, line, <<"|">>, message]).
 -define(LgDefConsoleOpts, [{use_stderr, false}, {group_leader, false}, {id, ?MODULE}, {fmtTer, ?LgDefFmtTer}, {fmtCfg, ?LgDefConsoleFmtCfg}]).
 
 -export([
@@ -22,6 +22,8 @@
    , handleInfo/2
    , terminate/2
    , code_change/3
+	
+   , eol/0
 ]).
 
 -record(state, {
@@ -37,11 +39,11 @@
 init(Opts) ->
    case isNewStyleConsole() of
       false ->
-         Msg = "eLog's console backend is incompatible with the 'old' shell, not enabling it",
+         Msg = "eLog's console backend is incompatible with the 'old' shell, not enabling it~n",
          %% be as noisy as possible, log to every possible place
          try alarm_handler:set_alarm({?MODULE, "WARNING: " ++ Msg})
          catch
-            _:_ -> error_logger:warning_msg(Msg ++ "~n")
+            _:_ -> error_logger:warning_msg(Msg)
          end,
          io:format("WARNING: " ++ Msg ++ "~n"),
          ?INT_LOG(?llvWarning, Msg, []),

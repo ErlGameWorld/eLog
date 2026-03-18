@@ -110,7 +110,7 @@ handle_event(Event, #state{sink = Sink, shaper = Shaper} = State) ->
             true ->
                {ok, State#state{shaper = NewShaper}};
             _ ->
-               ?LOGFMT(Sink, ?llvWarning, self(), <<"lgErrLoggerH dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>, [Drop, NewShaper#lgShaper.hwm]),
+               ?LOGFMT(Sink, ?llvWarning, self(), <<"lgErrLoggerH dropped ~p messages in the last second that exceeded the limit of ~p messages/sec~n">>, [Drop, NewShaper#lgShaper.hwm]),
                evalGl(Event, State#state{shaper = NewShaper})
          end;
       {false, _, NewShaper} ->
@@ -122,7 +122,7 @@ handle_info({mShaperExpired, ?MODULE}, #state{sink = Sink, shaper = Shaper} = St
       0 ->
          ignore;
       Dropped ->
-         ?LOGFMT(Sink, ?llvWarning, self(), <<"lgErrLoggerH dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>, [Dropped, Shaper#lgShaper.hwm])
+         ?LOGFMT(Sink, ?llvWarning, self(), <<"lgErrLoggerH dropped ~p messages in the last second that exceeded the limit of ~p messages/sec~n">>, [Dropped, Shaper#lgShaper.hwm])
    end,
    {ok, State#state{shaper = Shaper#lgShaper{dropped = 0}}};
 handle_info(_Info, State) ->
@@ -192,7 +192,7 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                            end,
                         ?CRASH_LOG(Event),
                         {Md, Formatted} = formatReasonMd(Reason),
-                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"gen_server ~w terminated with reason: ~s">>, [Name, Formatted]);
+                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"gen_server ~w terminated with reason: ~s~n">>, [Name, Formatted]);
                      "** gen_ipc State machine " ++ _ ->
                         %% gen_server terminate
                         {Reason, Name} =
@@ -209,7 +209,7 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                            end,
                         ?CRASH_LOG(Event),
                         {Md, Formatted} = formatReasonMd(Reason),
-                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"gen_ipc ~w terminated with reason: ~s">>, [Name, Formatted]);
+                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"gen_ipc ~w terminated with reason: ~s~n">>, [Name, Formatted]);
                      "** State machine " ++ _ ->
                         %% Check if the terminated process is gen_fsm or gen_statem
                         %% since they generate the same exit message
@@ -232,13 +232,13 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                            end,
                         {Md, Formatted} = formatReasonMd(Reason),
                         ?CRASH_LOG(Event),
-                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"~s ~w in state ~w terminated with reason: ~s">>, [Type, Name, StateName, Formatted]);
+                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"~s ~w in state ~w terminated with reason: ~s~n">>, [Type, Name, StateName, Formatted]);
                      "** gen_event handler" ++ _ ->
                         %% gen_event handler terminate
                         [ID, Name, _Msg, _State, Reason] = Args,
                         {Md, Formatted} = formatReasonMd(Reason),
                         ?CRASH_LOG(Event),
-                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"gen_event ~w installed in ~w terminated with reason: ~s">>, [ID, Name, Formatted]);
+                        ?LOGFMT(Sink, ?llvError, [{pid, Pid}, {name, Name} | Md], <<"gen_event ~w installed in ~w terminated with reason: ~s~n">>, [ID, Name, Formatted]);
                      "** Cowboy handler" ++ _ ->
                         %% Cowboy HTTP server error
                         ?CRASH_LOG(Event),
@@ -246,14 +246,14 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                            [Module, Function, Arity, _Request, _State] ->
                               %% we only get the 5-element list when its a non-exported function
                               ?LOGFMT(Sink, ?llvError, Pid,
-                                 <<"Cowboy handler ~p terminated with reason: call to undefined function ~p:~p/~p">>,
+                                 <<"Cowboy handler ~p terminated with reason: call to undefined function ~p:~p/~p~n">>,
                                  [Module, Module, Function, Arity]);
                            [Module, Function, Arity, _Class, Reason | Tail] ->
                               %% any other cowboy error_format list *always* ends with the stacktrace
                               StackTrace = lists:last(Tail),
                               {Md, Formatted} = formatReasonMd({Reason, StackTrace}),
                               ?LOGFMT(Sink, ?llvError, [{pid, Pid} | Md],
-                                 <<"Cowboy handler ~p terminated in ~p:~p/~p with reason: ~s">>, [Module, Module, Function, Arity, Formatted])
+                                 <<"Cowboy handler ~p terminated in ~p:~p/~p with reason: ~s~n">>, [Module, Module, Function, Arity, Formatted])
                         end;
                      "Ranch listener " ++ _ ->
                         %% Ranch errors
@@ -263,18 +263,18 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                            [Ref, ConnectionPid, StreamID, RequestPid, Reason, StackTrace] ->
                               {Md, Formatted} = formatReasonMd({Reason, StackTrace}),
                               ?LOGFMT(Sink, ?llvError, [{pid, RequestPid} | Md],
-                                 <<"Cowboy stream ~p with ranch listener ~p and connection process ~p "
-                                 "had its request process exit with reason: ~s">>, [StreamID, Ref, ConnectionPid, Formatted]);
+                                 <<"Cowboy stream ~p with ranch listener ~p and connection process ~p"
+                                 "had its request process exit with reason: ~s  ~n">>, [StreamID, Ref, ConnectionPid, Formatted]);
                            [Ref, _Protocol, Worker, {[{reason, Reason}, {mfa, {Module, Function, Arity}}, {stacktrace, StackTrace} | _], _}] ->
                               {Md, Formatted} = formatReasonMd({Reason, StackTrace}),
-                              ?LOGFMT(Sink, ?llvError, [{pid, Worker} | Md], <<"Ranch listener ~p terminated in ~p:~p/~p with reason: ~s">>, [Ref, Module, Function, Arity, Formatted]);
+                              ?LOGFMT(Sink, ?llvError, [{pid, Worker} | Md], <<"Ranch listener ~p terminated in ~p:~p/~p with reason: ~s~n">>, [Ref, Module, Function, Arity, Formatted]);
                            [Ref, _Protocol, Worker, Reason] ->
                               {Md, Formatted} = formatReasonMd(Reason),
-                              ?LOGFMT(Sink, ?llvError, [{pid, Worker} | Md], <<"Ranch listener ~p terminated with reason: ~s">>, [Ref, Formatted]);
+                              ?LOGFMT(Sink, ?llvError, [{pid, Worker} | Md], <<"Ranch listener ~p terminated with reason: ~s~n">>, [Ref, Formatted]);
                            [Ref, Protocol, Ret] ->
                               %% ranch_conns_sup.erl module line 119-123 has three parameters error msg, log it.
                               {Md, Formatted} = formatReasonMd(Ret),
-                              ?LOGFMT(Sink, ?llvError, [{pid, Protocol} | Md], <<"Ranch listener ~p terminated with result:~s">>, [Ref, Formatted])
+                              ?LOGFMT(Sink, ?llvError, [{pid, Protocol} | Md], <<"Ranch listener ~p terminated with result:~s~n">>, [Ref, Formatted])
                         end;
                      "webmachine error" ++ _ ->
                         %% Webmachine HTTP server error
@@ -289,7 +289,7 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                                  Error
                            end,
                         {Md, Formatted} = formatReasonMd(StackTrace),
-                        ?LOGFMT(Sink, ?llvError, [{pid, Pid} | Md], <<"Webmachine error at path ~p : ~s">>, [Path, Formatted]);
+                        ?LOGFMT(Sink, ?llvError, [{pid, Pid} | Md], <<"Webmachine error at path ~p : ~s~n">>, [Path, Formatted]);
                      _ ->
                         ?CRASH_LOG(Event),
                         ?LOGFMT(Sink, ?llvError, Pid, Fmt, Args)
@@ -308,7 +308,7 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                   Offender = formatOffender(Off),
                   {Md, Formatted} = formatReasonMd(Reason),
                   ?LOGFMT(Sink, ?llvError, [{pid, Pid} | Md],
-                     <<"Supervisor ~w had child ~s exit with reason ~s in context ~w">>,
+                     <<"Supervisor ~w had child ~s exit with reason ~s in context ~w~n">>,
                      [supervisorName(Name), Offender, Formatted, Ctx]);
                _ ->
                   ?LOGMSG(Sink, ?llvError, Pid, <<"SUPERVISOR REPORT ", (printSillyList(D))/binary>>)
@@ -332,13 +332,13 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                         no_log;
                      _ ->
                         {Md, Formatted} = formatReasonMd(Reason),
-                        ?LOGFMT(Sink, ?llvInfo, [{pid, Pid} | Md], <<"Application ~w exited with reason: ~s">>, [App, Formatted])
+                        ?LOGFMT(Sink, ?llvInfo, [{pid, Pid} | Md], <<"Application ~w exited with reason: ~s~n">>, [App, Formatted])
                   end;
                _ ->
                   ?LOGMSG(Sink, ?llvInfo, Pid, printSillyList(D))
             end;
          {info_report, _GL, {Pid, std_info, D}} ->
-            ?LOGFMT(Sink, ?llvInfo, Pid, "~w", [D]);
+            ?LOGFMT(Sink, ?llvInfo, Pid, "~w~n", [D]);
          {info_report, _GL, {P, progress, D}} ->
             Details = lists:sort(D),
             case Details of
@@ -347,7 +347,7 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                      true ->
                         no_log;
                      _ ->
-                        ?LOGFMT(Sink, ?llvInfo, P, <<"Application ~w started on node ~w">>, [App, Node])
+                        ?LOGFMT(Sink, ?llvInfo, P, <<"Application ~w started on node ~w~n">>, [App, Node])
                   end;
                [{started, Started}, {supervisor, Name}] ->
                   case lgUtil:get_env(suppressSupStartStop, false) of
@@ -356,14 +356,14 @@ logEvent(Event, #state{sink = Sink, raw = FormatRaw} = State) ->
                      _ ->
                         MFA = formatMfa(get_value(mfargs, Started)),
                         Pid = get_value(pid, Started),
-                        ?LOGFMT(Sink, ?llvDebug, P, <<"Supervisor ~w started ~s at pid ~w">>,
+                        ?LOGFMT(Sink, ?llvDebug, P, <<"Supervisor ~w started ~s at pid ~w~n">>,
                            [supervisorName(Name), MFA, Pid])
                   end;
                _ ->
                   ?LOGMSG(Sink, ?llvInfo, P, <<"PROGRESS REPORT ", (printSillyList(D))/binary>>)
             end;
          _ ->
-            ?LOGFMT(Sink, ?llvWarning, self(), <<"Unexpected error_logger event ~w">>, [Event])
+            ?LOGFMT(Sink, ?llvWarning, self(), <<"Unexpected error_logger event ~w~n">>, [Event])
       end,
    case DidLog of
       logged ->
@@ -394,7 +394,7 @@ formatCrashReport(Report, Neighbours) ->
    {Class, Reason, Trace} = get_value(error_info, Report),
    {Md, ReasonStr} = formatReasonMd({Reason, Trace}),
    Type = ?lgCASE(Class == exit, <<"exited">>, <<"crashed">>),
-   {Md0 ++ Md, eFmt:format(<<"Process ~w with ~w neighbours ~s with reason: ~s">>, [Name, length(Neighbours), Type, ReasonStr])}.
+   {Md0 ++ Md, eFmt:format(<<"Process ~w with ~w neighbours ~s with reason: ~s~n">>, [Name, length(Neighbours), Type, ReasonStr])}.
 
 formatOffender(Off) ->
    case get_value(mfargs, Off) of
@@ -566,7 +566,7 @@ formatVal(Val) ->
    eFmt:format(<<"~p">>, [Val], [{charsLimit, 500}]).
 
 printSillyList(L) ->
-   eFmt:format(<<"~p">>, [L], [{charsLimit, ?LgDefTruncation}]).
+   eFmt:format(<<"~p~n">>, [L], [{charsLimit, ?LgDefTruncation}]).
 
 %% @doc Faster than proplists, but with the same API as long as you don't need to
 %% handle bare atom keys

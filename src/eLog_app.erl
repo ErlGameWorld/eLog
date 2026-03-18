@@ -46,9 +46,15 @@ startSink(Sink) ->
 
 startSink(Sink, Opts) ->
    ChildId = lgUtil:makeInnerSinkName(Sink),
+   %% eLogEvent进程spawn_opt配置（代码写死，不通过配置）
+   SpawnOpts = [
+      {min_bin_vheap_size, 7 * 512 * 1024 div 8},   %% 3.5MB (word单位，64位系统1word=8字节)
+      {min_heap_size, 1 * 1024 * 1024 div 8},       %% 1MB (word单位)
+      {fullsweep_after, 1024}
+   ],
    SinkSpec = #{
       id => ChildId,
-      start => {gen_emm, start_link, [{local, Sink}]},
+      start => {gen_emm, start_link, [{local, Sink}, [{spawn_opt, SpawnOpts}]]},
       restart => permanent,
       shutdown => 5000,
       type => worker,

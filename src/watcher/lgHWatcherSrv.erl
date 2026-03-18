@@ -63,7 +63,7 @@ handleInfo({gen_event_EXIT, Module, {'EXIT', {kill_me, [_KillerHwm, KillerReinst
 handleInfo({gen_event_EXIT, Module, Reason}, #state{module = Module, config = Config, sink = Sink} = State) ->
    case ?LgShouldLog(?llvError) of
       true ->
-         ?LgNotify(?llvError, self(), <<"eLog event handler ~p exited with reason ~s">>, [Module, lgErrLoggerH:formatReason(Reason)]),
+         ?LgNotify(?llvError, self(), <<"eLog event handler ~p exited with reason ~s~n">>, [Module, lgErrLoggerH:formatReason(Reason)]),
          installHandler(Module, Config, Sink);
       _ ->
          ok
@@ -105,17 +105,17 @@ installHandler(Module, Config, Sink) ->
       end,
    case Ret of
       ok ->
-         ?INT_LOG(?llvDebug, <<"eLog installed handler ~p into ~p ~p">>, [Module, Sink, whereis(Sink)]),
+         ?INT_LOG(?llvDebug, <<"eLog installed handler ~p into ~p ~p~n">>, [Module, Sink, whereis(Sink)]),
          %eLog:updateLogevelCfg(Sink),
          ok;
       {error, {fatal, Reason}} ->
-         ?INT_LOG(?llvError, <<"eLog fatally failed to install handler ~p into ~p, NOT retrying: ~p">>, [Module, Sink, Reason]),
+         ?INT_LOG(?llvError, <<"eLog fatally failed to install handler ~p into ~p, NOT retrying: ~p~n">>, [Module, Sink, Reason]),
          %% tell ourselves to stop
          self() ! stop,
          ok;
       Error ->
          %% try to reinstall it later
-         ?INT_LOG(?llvError, <<"eLog failed to install handler ~p into ~p, retrying later : ~p">>, [Module, Sink, Error]),
+         ?INT_LOG(?llvError, <<"eLog failed to install handler ~p into ~p, retrying later : ~p~n">>, [Module, Sink, Error]),
          erlang:send_after(5000, self(), mReInstallHandler),
          ok
    end.

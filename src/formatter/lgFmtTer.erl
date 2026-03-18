@@ -60,10 +60,10 @@ format(LgMsg, Config, Colors) ->
    ].
 
 fmtCfg([]) ->
-   [datetime, sev, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>, message, <<"\n">>];
+   [datetime, sev, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>, message];
 fmtCfg(MetaWhitelist) ->
    [datetime, sev, <<"|">>, pid, <<"|">>, module, <<"|">>, function, <<"|">>, line, <<"|">>] ++
-      [{M, [atom_to_binary(M), <<"=">>, M, "|"], [<<>>]} || M <- MetaWhitelist] ++ [message, <<"\n">>].
+      [{M, [atom_to_binary(M), <<"=">>, M, "|"], [<<>>]} || M <- MetaWhitelist] ++ [message].
 
 %% @doc Print the format string `Fmt' with `Args' safely with a size
 %% limit of `Limit'. If the format string is invalid, or not enough

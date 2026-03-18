@@ -59,7 +59,7 @@ init({FBName, MaxFmtSize, MaxFileSize, CfgDate, Count, Rotator}) ->
          scheduleRotation(Date),
          {ok, #state{fileName = Filename, fBName = FBName, fd = Fd, inode = Inode, cTime = CTime, maxFmtSize = MaxFmtSize, maxFileSize = MaxFileSize, date = Date, count = Count, rotator = Rotator}};
       {error, Reason} ->
-         ?INT_LOG(?llvError, <<"Failed to open crash log file ~ts with error: ~s">>, [Filename, file:format_error(Reason)]),
+         ?INT_LOG(?llvError, <<"Failed to open crash log file ~ts with error: ~s~n">>, [Filename, file:format_error(Reason)]),
          {ok, #state{fileName = Filename, fBName = FBName, maxFmtSize = MaxFmtSize, maxFileSize = MaxFileSize, date = Date, count = Count, flap = true, rotator = Rotator}}
    end.
 
@@ -160,7 +160,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
          {error, _GL, {Pid1, Fmt, Args}} ->
             {<<"ERROR REPORT">>, Pid1, eFmt:format(Fmt, Args, [{charsLimit, FmtMaxBytes}]), true};
          {error_report, _GL, {Pid1, std_error, Rep}} ->
-            {<<"ERROR REPORT">>, Pid1, eFmt:format(<<"~p">>, [Rep], [{charsLimit, FmtMaxBytes}]), true};
+            {<<"ERROR REPORT">>, Pid1, eFmt:format(<<"~p~n">>, [Rep], [{charsLimit, FmtMaxBytes}]), true};
          {error_report, _GL, Other} ->
             perhapsSaslReport(error_report, Other, FmtMaxBytes);
          _ ->
@@ -183,7 +183,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      Msg = eFmt:formatIol(<<"~s~s~s~n">>, [Time, MsgStr, NodeSuffix]),
                      case file:write(NewFD, unicode:characters_to_binary(Msg)) of
                         {error, Reason} when Flap == false ->
-                           ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
+                           ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s~n">>, [FileName, file:format_error(Reason)]),
                            {ok, State#state{fd = NewFD, inode = NewInode, cTime = NewCTime, flap = true}};
                         ok ->
                            {ok, State#state{fd = NewFD, inode = NewInode, cTime = NewCTime, flap = false}};
@@ -192,7 +192,7 @@ writeLog(Event, #state{fileName = FileName, fd = FD, inode = Inode, cTime = CTim
                      end
                end;
             {error, Reason} ->
-               ?lgCASE(Flap, {ok, State}, begin ?INT_LOG(?llvError, <<"Failed to reopen crash log ~ts with error: ~s">>, [FileName, file:format_error(Reason)]), {ok, State#state{flap = true}} end)
+               ?lgCASE(Flap, {ok, State}, begin ?INT_LOG(?llvError, <<"Failed to reopen crash log ~ts with error: ~s~n">>, [FileName, file:format_error(Reason)]), {ok, State#state{flap = true}} end)
          end
    end.
 

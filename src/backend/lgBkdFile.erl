@@ -92,7 +92,7 @@ init(Opts) ->
       {ok, Fd, Inode, CTime, _Size} ->
          {ok, TemState#state{fd = Fd, inode = Inode, cTime = CTime}};
       {error, Reason} ->
-         ?INT_LOG(?llvError, <<"Failed to open log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]),
+         ?INT_LOG(?llvError, <<"Failed to open log file ~ts with error ~s~n">>, [FileName, file:format_error(Reason)]),
          {ok, TemState#state{flap = true}}
    end.
 
@@ -103,7 +103,7 @@ handleCall({mSetLogLevel, Level}, #state{fBName = FBName} = State) ->
       false ->
          {reply, {error, bad_loglevel}};
       LevelMask ->
-         ?INT_LOG(?llvNotice, <<"Changed loglevel of ~s to ~p">>, [FBName, Level]),
+         ?INT_LOG(?llvNotice, <<"Changed loglevel of ~s to ~p~n">>, [FBName, Level]),
          {reply, ok, State#state{level = LevelMask}}
    end;
 handleCall({mSetLogHwm, Hwm}, #state{shaper = Shaper, fBName = FBName} = State) ->
@@ -112,7 +112,7 @@ handleCall({mSetLogHwm, Hwm}, #state{shaper = Shaper, fBName = FBName} = State) 
          {reply, {error, badHwm}};
       _ ->
          NewShaper = Shaper#lgShaper{hwm = Hwm},
-         ?INT_LOG(?llvNotice, <<"Changed loghwm of ~ts to ~p">>, [FBName, Hwm]),
+         ?INT_LOG(?llvNotice, <<"Changed loghwm of ~ts to ~p~n">>, [FBName, Hwm]),
          {reply, {lastHwm, Shaper#lgShaper.hwm}, State#state{shaper = NewShaper}}
    end;
 handleCall(mRotate, State = #state{fBName = FBName}) ->
@@ -136,7 +136,7 @@ handleEvent({mWriteLog, Message}, #state{fBName = _FBName, level = Level, shaper
                      true ->
                         State;
                      _ ->
-                        Format = <<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>,
+                        Format = <<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec~n">>,
                         Args = [Drop, NewShaper#lgShaper.hwm],
                         NowMs = lgTime:nowMs(),
                         ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], timestamp = NowMs, msgFormat = Format, msgArgs = Args},
@@ -164,7 +164,7 @@ handleInfo({mShaperExpired, FBName}, #state{shaper = Shaper, fBName = FBName, fm
       0 ->
          ignore;
       Dropped ->
-         Format = <<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec">>,
+         Format = <<"lgBkdFile dropped ~p messages in the last second that exceeded the limit of ~p messages/sec~n">>,
          Args = [Dropped, Shaper#lgShaper.hwm],
          NowMs = lgTime:nowMs(),
          ReportMsg = #lgMsg{severity = ?llvWarning, pid = self(), module = ?MODULE, function = ?FUNCTION_NAME, line = ?LINE, metadata = [], timestamp = NowMs, msgFormat = Format, msgArgs = Args},
@@ -200,7 +200,7 @@ writeLog(#state{fileName = FileName, fd = Fd, inode = Inode, cTime = CTime, flap
                      writeFile(NewState, Level, Msg)
                end;
             {error, Reason} ->
-               ?lgCASE(Flap, State, begin ?INT_LOG(?llvError, <<"Failed to reopen log file ~ts with error ~s">>, [FileName, file:format_error(Reason)]), State#state{flap = true} end)
+               ?lgCASE(Flap, State, begin ?INT_LOG(?llvError, <<"Failed to reopen log file ~ts with error ~s~n">>, [FileName, file:format_error(Reason)]), State#state{flap = true} end)
          end;
       _ ->
          writeFile(State, Level, Msg)
@@ -215,7 +215,7 @@ writeFile(#state{fd = Fd, fileName = FileName, flap = Flap, syncOn = SyncOn} = S
          NewFlap =
             case file:datasync(Fd) of
                {error, Reason} when Flap == false ->
-                  ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s">>, [FileName, file:format_error(Reason)]),
+                  ?INT_LOG(?llvError, <<"Failed to write log message to file ~ts: ~s~n">>, [FileName, file:format_error(Reason)]),
                   true;
                ok ->
                   false;

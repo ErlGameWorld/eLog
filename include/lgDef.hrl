@@ -67,7 +67,7 @@
 %% 默认日志文件选项
 -define(LgDefHandler,
    [
-	  % {lgBkdConsole, [{level, '>=info'}]},	
+      {lgBkdConsole, [{level, '>=debug'}]},
       {lgBkdFile, [{id, info}, {file, <<"info.log">>}, {level, '>=info'}, {size, 10485760}, {date, <<"$D0">>}]},
       {lgBkdFile, [{id, error}, {file, <<"error.log">>}, {level, '>=error'}, {size, 10485760}, {date, <<"$D0">>}]}
    ]).
