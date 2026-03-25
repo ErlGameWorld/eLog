@@ -90,7 +90,8 @@ safeFormat(Fmt, Args, Limit) ->
 -spec output(term(), lgMsg()) -> iolist().
 output(message, LgMsg) ->
    #lgMsg{msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size} = LgMsg,
-   ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format);
+   RealArgs = ?lgCASE(Args =:= [] orelse Args =:= undefined, [], Args),
+   ?lgCASE(Safety == safe, safeFormat(Format, RealArgs, [{charsLimit, Size}]), unsafeFormat(Format, RealArgs));
 output(datetime, LgMsg) -> lgUtil:msToIolStr(LgMsg#lgMsg.timestamp);
 output(pid, LgMsg) -> pid_to_list(LgMsg#lgMsg.pid);
 output(node, _LgMsg) -> ?eLogCfg:get(?eLogNodeName);
@@ -133,7 +134,8 @@ output(Other, _) -> makeStr(Other).
 
 output(message, LgMsg, _Width) ->
    #lgMsg{msgFormat = Format, msgArgs = Args, msgSafety = Safety, msgFormatSize = Size} = LgMsg,
-   ?lgCASE(Args =/= [] andalso Args =/= undefined, ?lgCASE(Safety == safe, safeFormat(Format, Args, [{charsLimit, Size}]), unsafeFormat(Format, Args)), Format);
+   RealArgs = ?lgCASE(Args =:= [] orelse Args =:= undefined, [], Args),
+   ?lgCASE(Safety == safe, safeFormat(Format, RealArgs, [{charsLimit, Size}]), unsafeFormat(Format, RealArgs));
 output(datetime, LgMsg, _Width) -> lgUtil:msToIolStr(LgMsg#lgMsg.timestamp);
 output(pid, LgMsg, _Width) -> pid_to_list(LgMsg#lgMsg.pid);
 output(node, _LgMsg, _Width) -> ?eLogCfg:get(?eLogNodeName);
