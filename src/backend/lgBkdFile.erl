@@ -119,7 +119,7 @@ handleCall(mRotate, State = #state{fBName = FBName}) ->
    {_, NewState} = handleInfo({mRotate, FBName}, State),
    {reply, ok, NewState};
 handleCall(_Msg, _State) ->
-   ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p call receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    {reply, ok}.
 
 handleEvent({mWriteLog, Message}, #state{fBName = _FBName, level = Level, shaper = Shaper, fmtTer = FmtTer, fmtCfg = FmtCfg} = State) ->
@@ -150,7 +150,7 @@ handleEvent({mWriteLog, Message}, #state{fBName = _FBName, level = Level, shaper
          kpS
    end;
 handleEvent(_Msg, _State) ->
-   ?ERR(<<"~p event receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p event receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 handleInfo({mRotate, FBName}, #state{fBName = FBName, date = Date} = State) ->
@@ -172,7 +172,7 @@ handleInfo({mShaperExpired, FBName}, #state{shaper = Shaper, fBName = FBName, fm
    end,
    {noreply, State#state{shaper = Shaper#lgShaper{dropped = 0}}};
 handleInfo(_Msg, _State) ->
-   ?ERR(<<"~p info receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p info receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 terminate(_Reason, State) ->

@@ -67,11 +67,11 @@ handleCall({mWriteLog, Event}, State, _From) ->
    {Reply, NewState} = writeLog(Event, State),
    {reply, Reply, NewState};
 handleCall(_Msg, _State, _From) ->
-   ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p call receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    {reply, ok}.
 
 handleCast(_Msg, _State) ->
-   ?ERR(<<"~p cast receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p cast receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 handleInfo({mWriteLog, Event}, State) ->
@@ -82,7 +82,7 @@ handleInfo(mRotate, #state{date = Date} = State) ->
    scheduleRotation(Date),
    {noreply, NewState};
 handleInfo(_Msg, _State) ->
-   ?ERR(<<"~p info receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p info receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 terminate(_Reason, _State) ->

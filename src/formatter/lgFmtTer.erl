@@ -275,7 +275,3 @@ mdJoin([{K, V}], IntSep, _FieldSep, BinAcc) ->
 mdJoin([{K, V} | Left], IntSep, FieldSep, BinAcc) ->
    mdJoin(Left, FieldSep, <<BinAcc/binary, (eFmt:format(<<"~p~s~p">>, [K, IntSep, V]))/binary, FieldSep/binary>>).
 
-
-
-
-

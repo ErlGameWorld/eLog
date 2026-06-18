@@ -36,11 +36,11 @@ init({Sink, Module, Config}) ->
    {ok, #state{sink = Sink, module = Module, config = Config}}.
 
 handleCall(_Msg, _State, _From) ->
-   ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p call receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    {reply, ok}.
 
 handleCast(_Msg, _State) ->
-   ?ERR(<<"~p cast receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p cast receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 handleInfo({gen_event_EXIT, Module, normal}, #state{module = Module} = State) ->
@@ -56,7 +56,7 @@ handleInfo({gen_event_EXIT, Module, {'EXIT', {kill_me, [_KillerHwm, KillerReinst
    SinkPid = whereis(Sink),
    unlink(SinkPid),
    {_, Len} = process_info(SinkPid, message_queue_len),
-   error_logger:error_msg(<<"Killing sink ~p, current message_queue_len:~p~n">>, [Sink, Len]),
+   error_logger:error_msg("Killing sink ~p, current message_queue_len:~p~n", [Sink, Len]),
    exit(SinkPid, kill),
    _ = timer:apply_after(KillerReinstallAfter, eLog_app, startHandler, [Sink, Module, Config]),
    {stop, normal, State};
@@ -82,7 +82,7 @@ handleInfo({'EXIT', _Pid, killed}, #state{module = Module, config = Config, sink
    _ = timer:apply_after(Tmr, eLog_app, startHandler, [Sink, Module, Config]),
    {stop, normal, State};
 handleInfo(_Msg, _State) ->
-   ?ERR(<<"~p info receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p info receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 terminate(_Reason, _State) ->

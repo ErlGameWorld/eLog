@@ -36,7 +36,7 @@ handleCall(mGetLogLevel, _State) ->
 handleCall({mSetLogLevel, _Level}, _State) ->
    {reply, ok};
 handleCall(_Msg, _State) ->
-   ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p call receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    {reply, ok}.
 
 handleEvent({mWriteLog, _Message}, #state{sink = Sink, hwm = Hwm, window = Window, async = Async} = State) ->

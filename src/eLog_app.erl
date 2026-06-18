@@ -137,7 +137,7 @@ doStartHandlers([OneHandler | Handlers], Sink, NameAcc, HandlerAcc) ->
          {lgBkFile, FId} ->
             case lists:member(FId, NameAcc) of
                true ->
-                  error_logger:error_msg(<<"Cannot have same file (~p) in multiple file backends~n">>, [FId]),
+                  error_logger:error_msg("Cannot have same file (~p) in multiple file backends~n", [FId]),
                   throw({error, bad_config});
                _ ->
                   [FId | NameAcc]
@@ -188,7 +188,7 @@ tryRemoveLoggerHandler() ->
    catch
       error:undef -> ok;
       Err:Reason ->
-         error_logger:error_msg(<<"calling logger:remove_handler(default) failed: ~p ~p">>, [Err, Reason])
+         error_logger:error_msg("calling logger:remove_handler(default) failed: ~p ~p", [Err, Reason])
    end.
 
 tryMakeHandlerId({Mod, Config}) ->

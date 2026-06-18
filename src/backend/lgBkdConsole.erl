@@ -89,7 +89,7 @@ handleCall({mRotate, _}, _State) ->
 handleCall(mRotate, _State) ->
    {reply, ok, _State};
 handleCall(_Msg, _State) ->
-   ?ERR(<<"~p call receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p call receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    {reply, ok}.
 
 handleEvent({mWriteLog, Message}, #state{level = Level, out = Out, fmtTer = FmtTer, fmtCfg = FmtCfg, colors = Colors, id = _ID}) ->
@@ -102,7 +102,7 @@ handleEvent({mWriteLog, Message}, #state{level = Level, out = Out, fmtTer = FmtT
          kpS
    end;
 handleEvent(_Msg, _State) ->
-   ?ERR(<<"~p event receive unexpect msg ~p ~n ">>, [?MODULE, _Msg]),
+   ?ERR("~p event receive unexpect msg ~p ~n ", [?MODULE, _Msg]),
    kpS.
 
 handleInfo({'DOWN', _, process, Out, _}, #state{out = Out}) ->
@@ -110,7 +110,7 @@ handleInfo({'DOWN', _, process, Out, _}, #state{out = Out}) ->
 handleInfo({mRotate, _}, _State) ->
    kpS;
 handleInfo(_Msg, _State) ->
-   ?ERR(<<"~p info receive unexpect msg ~p ~n">>, [?MODULE, _Msg]),
+   ?ERR("~p info receive unexpect msg ~p ~n", [?MODULE, _Msg]),
    kpS.
 
 terminate(removeEpm, State) ->

@@ -63,11 +63,10 @@
 -define(LgDefLogRoot, <<"./log">>).
 
 
-
 %% 默认日志文件选项
 -define(LgDefHandler,
    [
-      {lgBkdConsole, [{level, '>=debug'}]},
+	  {lgBkdConsole, [{level, '>=debug'}]},
       {lgBkdFile, [{id, info}, {file, <<"info.log">>}, {level, '>=info'}, {size, 10485760}, {date, <<"$D0">>}]},
       {lgBkdFile, [{id, error}, {file, <<"error.log">>}, {level, '>=error'}, {size, 10485760}, {date, <<"$D0">>}]}
    ]).
@@ -131,7 +130,15 @@
    %%在生成中执行此操作，这样就不会导致从gen_event处理程序调用gen_event：which_handlers的死锁
    spawn(
       fun() ->
-         case catch (gen_emm:which_epm(?LgDefSink)) of
+         case try gen_emm:which_epm(?LgDefSink)
+              catch
+                 throw:Thrown ->
+                    Thrown;
+                 exit:ExitReason ->
+                    {'EXIT', ExitReason};
+                 error:ErrorReason:Stacktrace ->
+                    {'EXIT', {ErrorReason, Stacktrace}}
+              end of
             X when X == []; X == {'EXIT', noproc}; X == [lgBkdThrottle] ->
                %% there's no handlers yet or eLog isn't running, try again
                %% in half a second.
